@@ -48,4 +48,4 @@ for /f "tokens=1,* delims==" %%a in (info.ini) do (
 move info.ini info.ini.bak.!datetime:~3,4!!datetime:~8,2!!datetime:~11,2!!datetime:~14,2!!datetime:~17,2!!datetime:~20,2!
 move info.ini.new info.ini
 
-@REM pause
+pause
