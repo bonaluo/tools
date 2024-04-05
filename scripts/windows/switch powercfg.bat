@@ -27,7 +27,8 @@ for /f "skip=3 delims=" %%i in ('powercfg /l') do (
 if !findsleep!==0 (
     echo 未找到睡眠模式
     pause
-    exit 0
+    @REM /b 退出脚本而非cmd
+    exit /b
 )
 
 
