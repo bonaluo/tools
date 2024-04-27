@@ -1,36 +1,36 @@
-@REM æ­¤ç›®å½•ä¸ºå­˜æ”¾é€é¥æ¨¡æ‹Ÿå™¨å½•å±çš„æ•°æ®
-@REM å¦‚æœå˜æ›´ï¼ˆç§»åŠ¨ï¼‰å½•å±çš„ç›®å½•ï¼Œé‚£ä¹ˆå½•å±ç´¢å¼•æ•°æ®ä¹Ÿéœ€è¦å˜æ›´
+@REM ´ËÄ¿Â¼Îª´æ·ÅåĞÒ£Ä£ÄâÆ÷Â¼ÆÁµÄÊı¾İ
+@REM Èç¹û±ä¸ü£¨ÒÆ¶¯£©Â¼ÆÁµÄÄ¿Â¼£¬ÄÇÃ´Â¼ÆÁË÷ÒıÊı¾İÒ²ĞèÒª±ä¸ü
 
 
 @echo off
 chcp 65001
 @REM set v=110
 @REM set v=120&echo %v%
-@REM è¾“å‡ºçš„æ˜¯ 110ï¼Œå› ä¸ºvæ˜¯é¢„å¤„ç†çš„ï¼Œå…¶å®æ˜¯ set v=120&echo 110ï¼Œå› æ­¤è¦ä½¿ç”¨å»¶è¿Ÿå˜é‡
+@REM Êä³öµÄÊÇ 110£¬ÒòÎªvÊÇÔ¤´¦ÀíµÄ£¬ÆäÊµÊÇ set v=120&echo 110£¬Òò´ËÒªÊ¹ÓÃÑÓ³Ù±äÁ¿
 setlocal enabledelayedexpansion
 
 set datetime=%date% %time%
 echo !datetime!
-@REM ç¬¬ä¸€è¡Œä¸å¢åŠ æ¢è¡Œ
+@REM µÚÒ»ĞĞ²»Ôö¼Ó»»ĞĞ
 set  firstLine=1
 
 for /f "tokens=1,* delims==" %%a in (info.ini) do (
     if "%%a"=="filePath" (
         set "oldPath=%%b"
         echo oldPath=!oldPath!
-        @REM å› ä¸ºæ–‡ä»¶åç§°æ˜¯å›ºå®šæ ¼å¼çš„yyyyMMddHHmmss.mp4
+        @REM ÒòÎªÎÄ¼şÃû³ÆÊÇ¹Ì¶¨¸ñÊ½µÄyyyyMMddHHmmss.mp4
         set "newPath=%~dp0!oldPath:~-18!"
-        @REM åŸæ–‡ä»¶çš„è·¯å¾„åˆ†éš”ç¬¦æ˜¯/è€Œä¸æ˜¯\
+        @REM Ô­ÎÄ¼şµÄÂ·¾¶·Ö¸ô·ûÊÇ/¶ø²»ÊÇ\
         set newPath=!newPath:\=/!
         echo newPath=!newPath!
         echo %%a=!newPath!>> info.ini.new
     ) else (
-        @REM %%aä¸èƒ½ç›´æ¥æ“ä½œï¼Œéœ€è¦å…ˆèµ‹å€¼ç»™å˜é‡
+        @REM %%a²»ÄÜÖ±½Ó²Ù×÷£¬ĞèÒªÏÈ¸³Öµ¸ø±äÁ¿
         set "a=%%a"
         if "!a:~0,1!"=="[" (
             if !firstLine!==0 (
                 echo firstLine=0
-                @REM echo. echo/ æ¢è¡Œä½†æ˜¯å’Œ>>ä¹‹é—´ä¸è¦æœ‰å¤šäºå­—ç¬¦æ¯”å¦‚ç©ºæ ¼
+                @REM echo. echo/ »»ĞĞµ«ÊÇºÍ>>Ö®¼ä²»ÒªÓĞ¶àÓÚ×Ö·û±ÈÈç¿Õ¸ñ
                 echo.>> info.ini.new
             ) else (
                 echo set firstLine=0
@@ -43,11 +43,11 @@ for /f "tokens=1,* delims==" %%a in (info.ini) do (
     )
 )
 
-@REM å‘¨ä¸‰ 2024/04/03 18:28:03.68
-@REM å¤‡ä»½åŸæ–‡ä»¶ä¸º yyyyMMddMMhhss ç»“å°¾çš„æ ¼å¼ï¼Œå†ç”¨æ–°æ–‡ä»¶è¦†ç›–
+@REM ÖÜÈı 2024/04/03 18:28:03.68
+@REM ±¸·İÔ­ÎÄ¼şÎª yyyyMMddMMhhss ½áÎ²µÄ¸ñÊ½£¬ÔÙÓÃĞÂÎÄ¼ş¸²¸Ç
 move info.ini info.ini.bak.!datetime:~3,4!!datetime:~8,2!!datetime:~11,2!!datetime:~14,2!!datetime:~17,2!!datetime:~20,2!
 move info.ini.new info.ini
-@REM å¤åˆ¶é…ç½®æ–‡ä»¶è¦†ç›–åº”ç”¨å®‰è£…ç›®å½•ä¸­çš„é…ç½®æ–‡ä»¶
+@REM ¸´ÖÆÅäÖÃÎÄ¼ş¸²¸ÇÓ¦ÓÃ°²×°Ä¿Â¼ÖĞµÄÅäÖÃÎÄ¼ş
 copy info.ini info.ini.copy
 move info.ini.copy "D:\Program Files\Microvirt\MEmu\videos\info.ini"
 
