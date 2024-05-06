@@ -51,6 +51,9 @@ object IvyToMavenConverterWithRoot {
     saxParser.parse(new InputSource(new StringReader(xmlData)), handler)
 
     println(resultBuilder)
+    val printWriter = new java.io.PrintWriter(args(0)+"-maven.xml")
+    printWriter.write(resultBuilder.toString)
+    printWriter.close()    
   }
 
 }
