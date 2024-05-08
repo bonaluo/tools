@@ -2,9 +2,9 @@
 chcp 65001
 setlocal enabledelayedexpansion
 
-@REM æ‰‹åŠ¨å¤åˆ¶ä¸€ä¸ªç”µæºè®¡åˆ’ï¼Œå¹¶æ”¹åä¸ºç¡çœ ï¼Œè°ƒæ•´ç¡çœ è®¡åˆ’
+@REM ÊÖ¶¯¸´ÖÆÒ»¸öµçÔ´¼Æ»®£¬²¢¸ÄÃûÎªË¯Ãß£¬µ÷ÕûË¯Ãß¼Æ»®
 @REM powercfg -duplicatescheme 8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c
-@REM powercfg /changename 8c516f6d-1f64-44b9-b56b-d02779604e78 ç¡çœ 
+@REM powercfg /changename 8c516f6d-1f64-44b9-b56b-d02779604e78 Ë¯Ãß
 
 set "balanceGuid=381b4222-f694-41f0-9685-ff5bb260df2e"
 set "highguid=8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c"
@@ -17,7 +17,7 @@ for /f "skip=3 delims=" %%i in ('powercfg /l') do (
     set schemestr=%%i
     set schemename=!schemestr:~50,2!
     @REM echo !schemename!
-    if "!schemename!"=="ç¡çœ " (
+    if "!schemename!"=="Ë¯Ãß" (
         set findsleep=1
         set sleepguid=!schemestr:~11,36!
         echo sleepguid=!sleepguid!
@@ -25,14 +25,14 @@ for /f "skip=3 delims=" %%i in ('powercfg /l') do (
 )
 
 if !findsleep!==0 (
-    echo æœªæ‰¾åˆ°ç¡çœ æ¨¡å¼
+    echo Î´ÕÒµ½Ë¯ÃßÄ£Ê½
     pause
-    @REM /b é€€å‡ºè„šæœ¬è€Œécmd
+    @REM /b ÍË³ö½Å±¾¶ø·Çcmd
     exit /b
 )
 
 
-@REM è·å–å½“å‰æ´»åŠ¨çš„ç¡çœ è®¡åˆ’
+@REM »ñÈ¡µ±Ç°»î¶¯µÄË¯Ãß¼Æ»®
 
 for /f "delims=" %%a in ('powercfg /getactivescheme') do (
     set "guidstr=%%a"
@@ -41,8 +41,8 @@ for /f "delims=" %%a in ('powercfg /getactivescheme') do (
 
 echo activeguid=!activeguid!
 
-@REM å¦‚æœå½“å‰è®¡åˆ’æ˜¯ç¡çœ åˆ™åˆ‡æ¢ä¸ºé«˜æ€§èƒ½
-@REM å¦‚æœå½“å‰è®¡åˆ’æ˜¯é«˜æ€§èƒ½åˆ™åˆ‡æ¢ä¸ºç¡çœ 
+@REM Èç¹ûµ±Ç°¼Æ»®ÊÇË¯ÃßÔòÇĞ»»Îª¸ßĞÔÄÜ
+@REM Èç¹ûµ±Ç°¼Æ»®ÊÇ¸ßĞÔÄÜÔòÇĞ»»ÎªË¯Ãß
 
 if "!activeguid!"=="!sleepguid!" (
     echo switch sleep to high
