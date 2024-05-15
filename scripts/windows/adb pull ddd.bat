@@ -14,7 +14,7 @@ set "minute=!dt:~10,2!"
 set "second=!dt:~12,2!"
 
 :: 创建目标目录
-set "targetDir=F:\video\owner\!year!!month!!day!123"
+set "targetDir=F:\video\owner\!year!!month!!day!"
 echo 创建目标目录为：!targetDir!
 mkdir "!targetDir!"
 
