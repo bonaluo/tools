@@ -23,9 +23,19 @@ set "sourceDir=/sdcard/Pictures/gallery/owner/ddd/"
 :: 使用ADB拉取文件
 :: temp.txt 是utf-8编码，batch读入之后乱码，batch脚本的编码改为 UTF-8 同时脚本开头加上 chcp 65001 即可解决
 adb shell "cd !sourceDir! && ls" > temp.txt
+
+:: 计算进度
+set total=0
 for /f %%f in (temp.txt) do (
-    adb pull -a -z any "!sourceDir!%%f" "!targetDir!\%%f"
+    set /a total+=1
 )
+set count=0
+for /f %%f in (temp.txt) do (
+    echo !count!/!total!
+    adb pull -a -z any "!sourceDir!%%f" "!targetDir!\%%f"
+    set /a count+=1
+)
+echo !count!/!total!
 
 :: 清理临时文件
 del temp.txt
@@ -38,11 +48,8 @@ for /f "tokens=2 delims==" %%a in ('wmic os get localdatetime /value') do set "e
 echo %starttime% ~ %endtime%
 
 echo %et:~0,14%-%dt:~0,14%
-:: 由于batch只支持32位，因此年月日时分秒的长度都是14位超出了计算范围，可以只取时分秒进行计算
-set /a "costtime=%et:~8,6%-%dt:~8,6%"
-echo 拉取耗时：%costtime%s
 
-:: 可以使用 PowerShell 进行更准确的计算
+:: 可以使用 PowerShell 进行更准确的计算，计算有问题，分钟和秒是60进制，但是计算使用的是10进制
 echo %et:~0,18%-%dt:~0,18%
 set "Calculation=%et:~0,18%-%dt:~0,18%"
 for /f %%i in ('powershell "%Calculation%"') do set "result=%%i"
