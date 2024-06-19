@@ -11,6 +11,7 @@ for /f "tokens=2 delims==" %%a in ('wmic os get localdatetime /value') do set "d
 ::set "hour=!dt:~8,2!"
 ::set "minute=!dt:~10,2!"
 ::set "second=!dt:~12,2!"
+for /f %%i in ('powershell -Command "(Get-Date -UFormat %%s)"') do set dttimestamp=%%i
 
 :: 创建目标目录
 set "targetDir=F:\video\bilibili\bilibili_download_!dt:~0,4!!dt:~4,2!!dt:~6,2!!dt:~8,2!!dt:~10,2!!dt:~12,2!"
@@ -42,10 +43,11 @@ echo 文件已成功拉取到目录：!targetDir!
 
 :: 打印拉取耗时
 for /f "tokens=2 delims==" %%a in ('wmic os get localdatetime /value') do set "et=%%a"
+for /f %%i in ('powershell -Command "(Get-Date -UFormat %%s)"') do set ettimestamp=%%i
 
 :: 可以使用 PowerShell 进行更准确的计算
 echo %et:~0,18%-%dt:~0,18%
-set "Calculation=%et:~0,18%-%dt:~0,18%"
+set "Calculation=%ettimestamp% - %dttimestamp%"
 for /f %%i in ('powershell "%Calculation%"') do set "result=%%i"
 echo Result: %result%s
 

@@ -3,8 +3,10 @@ chcp 65001
 setlocal enabledelayedexpansion
 :: 注意打开 【停用 adb 授权超时功能】，否则 adb 过一会儿会自动断开连接，导致拉取失败
 
-set "starttime=%date%%time%"
 :: 设置日期和时间格式
+:: 中文格式日期
+set "starttime=%date%%time%"
+:: 格式化日期
 for /f "tokens=2 delims==" %%a in ('wmic os get localdatetime /value') do set "dt=%%a"
 set "year=!dt:~0,4!"
 set "month=!dt:~4,2!"
@@ -12,6 +14,8 @@ set "day=!dt:~6,2!"
 set "hour=!dt:~8,2!"
 set "minute=!dt:~10,2!"
 set "second=!dt:~12,2!"
+:: 时间戳
+for /f %%i in ('powershell -Command "(Get-Date -UFormat %%s)"') do set dttimestamp=%%i
 
 :: 创建目标目录
 set "targetDir=F:\video\owner\!year!!month!!day!"
@@ -45,13 +49,12 @@ echo 文件已成功拉取到目录：!targetDir!
 :: 打印拉取耗时
 set "endtime=%date%%time%"
 for /f "tokens=2 delims==" %%a in ('wmic os get localdatetime /value') do set "et=%%a"
-echo %starttime% ~ %endtime%
+for /f %%i in ('powershell -Command "(Get-Date -UFormat %%s)"') do set ettimestamp=%%i
+echo starttime ~ endtime : %starttime% ~ %endtime%
+echo dt ~ dt : %dt% ~ %et%
 
-echo %et:~0,14%-%dt:~0,14%
-
-:: 可以使用 PowerShell 进行更准确的计算，计算有问题，分钟和秒是60进制，但是计算使用的是10进制
-echo %et:~0,18%-%dt:~0,18%
-set "Calculation=%et:~0,18%-%dt:~0,18%"
+:: 可以使用 PowerShell 进行更准确的计算
+set "Calculation=%ettimestamp% - %dttimestamp%"
 for /f %%i in ('powershell "%Calculation%"') do set "result=%%i"
 echo Result: %result%s
 
@@ -61,13 +64,6 @@ set /a "remainingSeconds=result %% 3600"
 set /a "costtimem=remainingSeconds / 60"
 set /a "costtimes=remainingSeconds %% 60"
 echo 拉取耗时：%costtimeh%h%costtimem%m%costtimes%s
-
-::由于精度不同可能会出现不同的结果，例如
-::20240509032052-20240509032050
-::拉取耗时：2s
-::20240509032052.335-20240509032050.341
-::Result: 1.99609375s
-::拉取耗时：0h0m1s
 
 
 set /p ifopen=是否打开文件夹（直接回车跳过）？(y/n) 
