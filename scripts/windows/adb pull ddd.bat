@@ -3,8 +3,7 @@ chcp 65001
 setlocal enabledelayedexpansion
 :: 注意打开 【停用 adb 授权超时功能】，否则 adb 过一会儿会自动断开连接，导致拉取失败
 
-:: 设置日期和时间格式
-:: 中文格式日期
+:: 设置日期和时间格式，中文格式日期
 set "starttime=%date%%time%"
 :: 格式化日期
 for /f "tokens=2 delims==" %%a in ('wmic os get localdatetime /value') do set "dt=%%a"
@@ -23,6 +22,7 @@ echo 创建目标目录为：!targetDir!
 mkdir "!targetDir!"
 
 set "sourceDir=/sdcard/Pictures/gallery/owner/ddd/"
+@REM set "sourceDir=/sdcard/Download/MiShare/"
 @REM set "sourceDir=/sdcard/Pictures/gallery/owner/YouTube/"
 :: 使用ADB拉取文件
 :: temp.txt 是utf-8编码，batch读入之后乱码，batch脚本的编码改为 UTF-8 同时脚本开头加上 chcp 65001 即可解决
@@ -51,7 +51,7 @@ set "endtime=%date%%time%"
 for /f "tokens=2 delims==" %%a in ('wmic os get localdatetime /value') do set "et=%%a"
 for /f %%i in ('powershell -Command "(Get-Date -UFormat %%s)"') do set ettimestamp=%%i
 echo starttime ~ endtime : %starttime% ~ %endtime%
-echo dt ~ dt : %dt% ~ %et%
+echo dt ~ et : %dt% ~ %et%
 
 :: 可以使用 PowerShell 进行更准确的计算
 set "Calculation=%ettimestamp% - %dttimestamp%"
@@ -65,6 +65,8 @@ set /a "costtimem=remainingSeconds / 60"
 set /a "costtimes=remainingSeconds %% 60"
 echo 拉取耗时：%costtimeh%h%costtimem%m%costtimes%s
 
+:: 删除源文件
+adb shell rm -rf !sourceDir!
 
 set /p ifopen=是否打开文件夹（直接回车跳过）？(y/n) 
 if /i "%ifopen%"=="y" ( 
