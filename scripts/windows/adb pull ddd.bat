@@ -67,6 +67,7 @@ echo 拉取耗时：%costtimeh%h%costtimem%m%costtimes%s
 
 :: 删除源文件
 adb shell rm -rf !sourceDir!
+echo 已删除文件
 
 set /p ifopen=是否打开文件夹（直接回车跳过）？(y/n) 
 if /i "%ifopen%"=="y" ( 
