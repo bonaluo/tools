@@ -7,7 +7,7 @@ try {
     const lines = data.split(/\r?\n/);
     // 输出每一行
     for (const line of lines) {
-        if (!fs.existsSync("F:\\video\\telegram\\20240515\\" + line)) {
+        if (!fs.existsSync("F:\\video\\owner\\20240630\\" + line)) {
             console.log(line);
         }
     }
