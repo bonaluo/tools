@@ -1,21 +1,22 @@
 @echo off
+chcp 65001
 setlocal
 
-:: Ğ¡Ã×ÎÄ¼ş¹ÜÀíÆ÷Ô¶³Ì¹ÜÀí²»Ö§³Ö mget *£¬Ê¹ÓÃwget½øĞĞÌæ´ú
-:: windowsÏÂµÄftpÖ»Ö§³Ögbk±àÂë£¬Òò´Ë·şÎñÆ÷µÄ´«Êä±àÂëÇë¸Ä³ÉGBK·ÀÖ¹ÖĞÎÄÂÒÂë
-:: ÉèÖÃ FTP ·şÎñÆ÷µÄµØÖ·¡¢¶Ë¿Ú¡¢ÓÃ»§ÃûºÍÃÜÂë
+:: å°ç±³æ–‡ä»¶ç®¡ç†å™¨è¿œç¨‹ç®¡ç†ä¸æ”¯æŒ mget *ï¼Œä½¿ç”¨wgetè¿›è¡Œæ›¿ä»£
+:: windowsä¸‹çš„ftpåªæ”¯æŒgbkç¼–ç ï¼Œå› æ­¤æœåŠ¡å™¨çš„ä¼ è¾“ç¼–ç è¯·æ”¹æˆGBKé˜²æ­¢ä¸­æ–‡ä¹±ç 
+:: è®¾ç½® FTP æœåŠ¡å™¨çš„åœ°å€ã€ç«¯å£ã€ç”¨æˆ·åå’Œå¯†ç 
 set "ftp_server=192.168.31.72"
 set "ftp_port=2121"
 set "ftp_user=root"
 set "ftp_pass=root"
 
-:: ÉèÖÃÒª½øÈëºÍ±£´æµÄÄ¿Â¼
-::set "ftp_directory=Pictures/gallery/owner/YouTube/"
-set "ftp_directory=Android/data/tv.danmaku.bili/download"
+:: è®¾ç½®è¦è¿›å…¥å’Œä¿å­˜çš„ç›®å½•
+set "ftp_directory=Pictures/gallery/owner/YouTube/"
+@REM set "ftp_directory=Android/data/tv.danmaku.bili/download"
 set "ftp_commands_path=..\..\temp\ftp_commands.txt"
 set "file_path=..\..\temp\ftp_file_path.txt"
 
-:: Ê¹ÓÃ FTP ÃüÁîÁ¬½Óµ½·şÎñÆ÷
+:: ä½¿ç”¨ FTP å‘½ä»¤è¿æ¥åˆ°æœåŠ¡å™¨
 echo open %ftp_server% %ftp_port%> %ftp_commands_path%
 echo %ftp_user%>> %ftp_commands_path%
 echo %ftp_pass%>> %ftp_commands_path%
@@ -23,10 +24,10 @@ echo cd %ftp_directory%>> %ftp_commands_path%
 echo ls>> %ftp_commands_path%
 echo bye>> %ftp_commands_path%
 
-:: Ö´ĞĞ FTP ÃüÁî
+:: æ‰§è¡Œ FTP å‘½ä»¤
 ftp -s:%ftp_commands_path%
 
-:: É¾³ıÁÙÊ±ÎÄ¼ş
+:: åˆ é™¤ä¸´æ—¶æ–‡ä»¶
 del %ftp_commands_path%
 del %file_path%
 
