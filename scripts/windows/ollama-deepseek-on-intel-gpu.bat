@@ -6,7 +6,6 @@ chcp 65001
 call C:\Users\XFYMT\miniconda3\Scripts\activate.bat C:\Users\XFYMT\miniconda3\envs\llm-cpp
 
 cd /d c:\llama-cpp
-dir
 set OLLAMA_NUM_GPU=999
 set no_proxy=localhost,127.0.0.1
 set ZES_ENABLE_SYSMAN=1
