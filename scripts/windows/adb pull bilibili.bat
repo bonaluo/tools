@@ -18,12 +18,12 @@ set "targetDir=H:\video\bilibili\bilibili_download_!dt:~0,4!!dt:~4,2!!dt:~6,2!!d
 echo !targetDir!
 mkdir "!targetDir!"
 set "sourceDir=/sdcard/Android/data/tv.danmaku.bili/download/"
-
+set count=500
 :: 使用ADB拉取文件
 :: temp.txt 是utf-8编码，batch读入之后乱码，batch脚本的编码改为 UTF-8 同时脚本开头加上 chcp 65001 即可解决
 :: adb shell "cd %sourceDir% && ls" > temp.txt
 :: 按修改时间（t）升序（r）取前500行（head），并输出文件夹名称（$8）
-adb shell "cd %sourceDir% && ls -ltr | head -n 500 | awk '{print $8}'" > temp.txt
+adb shell "cd %sourceDir% && ls -ltr | head -n %count% | awk '{print $8}'" > temp.txt
 
 :: 计算进度
 set total=0
