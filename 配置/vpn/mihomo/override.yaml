@@ -1,6 +1,7 @@
 # https://mihomo.party/docs/guide/override/yaml
 +rules:
-  - DOMAIN-SUFFIX,jable.tv,非日本      
+  - DOMAIN-SUFFIX,jable.tv,非日本
+  - DOMAIN-SUFFIX,missav.ai,非日本      
   - DOMAIN-SUFFIX,pornhub.com,非日本
   - DOMAIN-SUFFIX,hanime1.me,非日本
   - DOMAIN-SUFFIX,anime1.me,非日本
@@ -9,3 +10,5 @@
   - DOMAIN-SUFFIX,epicgames.com,香港
   - DOMAIN-SUFFIX,tw,台湾
   - DOMAIN-SUFFIX,bahamut.akamaized.net,台湾
+  - DOMAIN-SUFFIX,jp,日本
+  - DOMAIN-SUFFIX,intel.cn,直连
