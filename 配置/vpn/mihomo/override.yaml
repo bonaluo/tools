@@ -9,6 +9,13 @@
   - DOMAIN-SUFFIX,copilot.microsoft.com,香港
   - DOMAIN-SUFFIX,epicgames.com,香港
   - DOMAIN-SUFFIX,tw,台湾
+  - DOMAIN-SUFFIX,doubleclick.net,台湾
   - DOMAIN-SUFFIX,bahamut.akamaized.net,台湾
   - DOMAIN-SUFFIX,jp,日本
   - DOMAIN-SUFFIX,intel.cn,直连
+  - DOMAIN-SUFFIX,intel.com,直连
+  - DOMAIN-SUFFIX,bandbbs.cn,直连
+  - DOMAIN-SUFFIX,ntdm8.com,直连
+  - DOMAIN-SUFFIX,lanzoux.com,全部
+  - DOMAIN-SUFFIX,ghcr.io,全部
+  - DOMAIN-SUFFIX,home-assistant.io,全部

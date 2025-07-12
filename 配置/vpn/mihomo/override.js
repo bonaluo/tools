@@ -58,5 +58,41 @@ function main(config) {
     });
 
   })
+
+  // 添加规则，对于某些脚本和规则覆写不能同时使用，优先使用脚本
+  // addRules(obj);
   return obj;
+}
+
+const domainRules = [
+  "DOMAIN-SUFFIX,jable.tv,非日本",
+  "DOMAIN-SUFFIX,missav.ai,非日本",
+  "DOMAIN-SUFFIX,pornhub.com,非日本",
+  "DOMAIN-SUFFIX,hanime1.me,非日本",
+  "DOMAIN-SUFFIX,anime1.me,非日本",
+  "DOMAIN-SUFFIX,18commic.vip,非日本",
+  "DOMAIN-SUFFIX,copilot.microsoft.com,香港",
+  "DOMAIN-SUFFIX,epicgames.com,香港",
+  "DOMAIN-SUFFIX,tw,台湾",
+  "DOMAIN-SUFFIX,doubleclick.net,台湾",
+  "DOMAIN-SUFFIX,bahamut.akamaized.net,台湾",
+  "DOMAIN-SUFFIX,jp,日本",
+  "DOMAIN-SUFFIX,intel.cn,直连",
+  "DOMAIN-SUFFIX,intel.com,直连",
+  "DOMAIN-SUFFIX,bandbbs.cn,直连",
+  "DOMAIN-SUFFIX,ntdm8.com,直连",
+  "DOMAIN-SUFFIX,lanzoux.com,全部",
+  "DOMAIN-SUFFIX,ghcr.io,全部",
+  "DOMAIN-SUFFIX,home-assistant.io,全部"
+];
+
+
+// 添加规则，对于某些脚本和规则覆写不能同时使用，优先使用脚本
+function addRules(obj) {
+  // domainRules.forEach(rule => {
+  //   obj.rules.unshift(rule);
+  // })
+  
+  // 使用展开运算符将数组元素添加到规则列表中
+  obj.rules.unshift(...domainRules);
 }
