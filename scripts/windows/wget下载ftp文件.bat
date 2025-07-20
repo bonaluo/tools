@@ -1,7 +1,8 @@
 @echo off
-:: -ndH nd ²»±£ÁôÄ¿Â¼½á¹¹ºÍ nH ²»´´½¨ÒÔÖ÷»úÃû³ÆÃüÃûµÄÄ¿Â¼
-:: -P Êä³öÄ¿Â¼
-:: --remote-encoding=GBK Ö¸¶¨·şÎñÆ÷±àÂë£¬ÎªÁË¼æÈİwindowsÏÂftpÃüÁî£¨windowsÏÂftpÃüÁîÖ»Ö§³ÖGBK£¬µ«wgetÖ§³Ö¶à±àÂë£©£¬½«·şÎñÆ÷±àÂëÉèÖÃÎªGBK£¬
-wsl wget ftp://192.168.31.72:2121/Pictures/gallery/owner/YouTube/ ^
+chcp 65001 >nul
+:: -ndH nd ä¸ä¿ç•™ç›®å½•ç»“æ„å’Œ nH ä¸åˆ›å»ºä»¥ä¸»æœºåç§°å‘½åçš„ç›®å½• 
+:: -P è¾“å‡ºç›®å½• 
+:: --remote-encoding=GBK æŒ‡å®šæœåŠ¡å™¨ç¼–ç ï¼Œä¸ºäº†å…¼å®¹windowsä¸‹ftpå‘½ä»¤ï¼ˆwindowsä¸‹ftpå‘½ä»¤åªæ”¯æŒGBKï¼Œä½†wgetæ”¯æŒå¤šç¼–ç ï¼‰ï¼Œå°†æœåŠ¡å™¨ç¼–ç è®¾ç½®ä¸ºGBKï¼Œ 
+wsl wget ftp://10.31.0.95:2121/Pictures/gallery/owner/ddd/ ^
 --ftp-user=root --ftp-password=root -r -ndH -P ../../temp/ddd/ --remote-encoding=GBK
 pause
