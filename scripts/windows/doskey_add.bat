@@ -1,6 +1,6 @@
 @echo off
 doskey cd=cd /d $*
 
-echo апЁЖкЫспря╟╡в╟╣д©Л╫щ╥╫й╫
+echo Е┬≈Е┤╨Ф┴─Ф°┴Е╥╡Е╝┴Хё┘Г └Е©╚Ф█╥Ф√╧Е╪▐
 doskey /macros:all
 pause
