@@ -48,15 +48,23 @@ function main(config) {
     { name: '香港', rule: /(HK|香港)/, type: 'url-test' },
     { name: '台湾', rule: /(TW|台湾)/, type: 'url-test' },
     { name: '日本', rule: /(JP|日本)/, type: 'url-test' },
-    { name: '非日本', rule: /^(?!.*(JP|日本)).*$/, type: 'url-test' }
+    { name: '非日本', rule: /^(?!.*(JP|日本)).*$/, type: 'url-test' },
+    { name: '美国', rule: /(US|美国)/, type: 'url-test' }
 
   ]
   appendProxyGroups.forEach(({ name, rule, defualt, type }) => {
+    // 判断是否有重复的代理组，前面的按名称分组可能和后面的自定义的冲突
+    const exists = obj['proxy-groups'].some(item => {
+      return item.name === name;
+    })
+    console.log(`${name}:${exists}`)
+    if (exists) {
+      return;
+    }
     obj['proxy-groups'].push({
       name, type: type, proxies: findProxy(obj, rule, defualt),
       url: 'http://www.gstatic.com/generate_204', interval: 600
     });
-
   })
 
   // 添加规则，对于某些脚本和规则覆写不能同时使用，优先使用脚本
