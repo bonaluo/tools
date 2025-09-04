@@ -31,6 +31,7 @@ Write-Host "最新版本: $latestVersion"
 if ($localVersion -eq $latestVersion) {
     Write-Host "已是最新版本，无需更新。"
     Remove-Item -Recurse -Force $tempDir
+    Pause
     exit
 }
 
@@ -60,6 +61,7 @@ $extractedExe = Get-ChildItem -Path $tempDir -Filter "ddns-go.exe" -Recurse | Se
 if (-not $extractedExe) {
     Write-Host "未找到解压后的 ddns-go.exe，脚本退出。"
     Remove-Item -Recurse -Force $tempDir
+    Pause
     exit 1
 }
 
