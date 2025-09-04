@@ -78,4 +78,8 @@ Write-Host "安装服务..."
 Remove-Item -Recurse -Force $tempDir
 
 Write-Host "更新/安装完成！"
-Pause
+Write-Host "是否打开 ddns-go 管理页面？(Y/N)"
+$answer = Read-Host "请输入 Y 或 N"
+if ($answer -eq 'Y' -or $answer -eq 'y') {
+    Start-Process "http://127.0.0.1:9876/login"
+}
