@@ -29,7 +29,7 @@ $targetDir = "P:\video\bilibili\bilibili_download_$dt"
 Write-Host "创建目标目录：$targetDir"
 New-Item -ItemType Directory -Path $targetDir -Force | Out-Null
 $sourceDir = "/sdcard/Android/data/tv.danmaku.bili/download"
-$count = 10
+$count = 100
 
 # 统计源目录文件总数
 $cmdTotal = "cd $sourceDir && ls -l | awk '{print `$8}'"
@@ -53,7 +53,7 @@ foreach ($f in $files) {
     & adb -s $selecteddev pull -a -z any "$sourceDir/$f/" "$targetDir/$f"
     $count++
     & Write-Host "已拉取 $sourceDir/$f 到 $targetDir/$f"
-    & adb -s $selecteddev shell "rm -rf '$sourceDir$f'"
+    & adb -s $selecteddev shell "rm -rf '$sourceDir/$f'"
     & Write-Host "已删除 $sourceDir$f"
 }
 Write-Host "$count/$total"
