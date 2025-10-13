@@ -17,16 +17,42 @@ set "second=!dt:~12,2!"
 for /f %%i in ('powershell -Command "(Get-Date -UFormat %%s)"') do set dttimestamp=%%i
 
 :: 创建目标目录
-set "targetDir=F:\video\owner\!year!!month!!day!"
+set "targetDir=P:\video\owner\!year!!month!!day!"
 echo 创建目标目录为：!targetDir!
 mkdir "!targetDir!"
+:: 检查并选择设备
+adb devices > devices.txt
+set "devcount=0"
+setlocal enabledelayedexpansion
+for /f "skip=1 tokens=1" %%d in (devices.txt) do (
+    if not "%%d"=="" (
+        set /a devcount+=1
+        set "devname[!devcount!]=%%d"
+    )
+)
+del devices.txt
+if %devcount%==0 (
+    echo 未检测到任何设备，请连接设备后重试。
+    pause
+    exit /b
+)
+if %devcount%==1 (
+    set "selecteddev=!devname[1]!"
+    echo 检测到设备: !selecteddev!
+) else (
+    echo 检测到多个设备：
+    for /l %%i in (1,1,%devcount%) do echo %%i. !devname[%%i]!
+    set /p devsel=请选择设备编号：
+    set "selecteddev=!devname[%devsel%]!"
+    echo 已选择设备: !selecteddev!
+)
 
-set "sourceDir=/sdcard/Pictures/gallery/owner/ddd/"
+set "sourceDir=/sdcard/Pictures/gallery/owner/ddd1/"
 @REM set "sourceDir=/sdcard/Download/MiShare/"
 @REM set "sourceDir=/sdcard/Pictures/gallery/owner/YouTube/"
 :: 使用ADB拉取文件
 :: temp.txt 是utf-8编码，batch读入之后乱码，batch脚本的编码改为 UTF-8 同时脚本开头加上 chcp 65001 即可解决
-adb shell "cd !sourceDir! && ls" > temp.txt
+adb -s !selecteddev! shell "cd !sourceDir! && ls" > temp.txt
 
 :: 计算进度
 set total=0
@@ -35,7 +61,7 @@ for /f %%f in (temp.txt) do (
 )
 set count=0
 for /f %%f in (temp.txt) do (
-    echo !count!/!total!
+    adb -s !selecteddev! pull -a -z any "!sourceDir!%%f" "!targetDir!\%%f"
     adb pull -a -z any "!sourceDir!%%f" "!targetDir!\%%f"
     set /a count+=1
 )
@@ -64,10 +90,10 @@ set /a "remainingSeconds=result %% 3600"
 set /a "costtimem=remainingSeconds / 60"
 set /a "costtimes=remainingSeconds %% 60"
 echo 拉取耗时：%costtimeh%h%costtimem%m%costtimes%s
-
+adb -s !selecteddev! shell rm -rf !sourceDir!
 :: 删除源文件
 adb shell rm -rf !sourceDir!
-echo 已删除文件
+echo 已删除全部文件
 
 set /p ifopen=是否打开文件夹（直接回车跳过）？(y/n) 
 if /i "%ifopen%"=="y" ( 
