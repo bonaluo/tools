@@ -1,7 +1,9 @@
 $ErrorActionPreference = "Stop"
 
-# 检查并选择设备
-$devices = & adb devices | Select-Object -Skip 1 | Where-Object { $_ -match "device$" } | ForEach-Object { ($_ -split '\s+')[0] }
+# 检查并选择设备，解释：列出所有设备，跳过第一行，过滤出结尾为"device"的行，提取设备ID
+# 只有一个设备时列出设备失败问题，当只有一个设备时，$devices 就是字符串，$selecteddev = $devices[0] 取的是第一个字符
+# $devices = @( ...你的管道代码... ) 是为了把结果强制存成数组
+$devices = @(& adb devices | Select-Object -Skip 1 | Where-Object { $_ -match "device$" } | ForEach-Object { ($_ -split '\s+')[0] })
 if ($devices.Count -eq 0) {
     Write-Host "未检测到任何设备，请连接设备后重试。"
     Pause
@@ -21,7 +23,11 @@ if ($devices.Count -eq 1) {
 }
 
 # 设置日期和时间格式
-$dt = (Get-Date).ToString('yyyyMMddHHmmss')
+$startTime = Get-Date
+$dt = $startTime.ToString('yyyyMMddHHmmss')
+$startTimeFormatted = $startTime.ToString('yyyy-MM-dd HH:mm:ss')
+Write-Host "开始时间: $startTimeFormatted"
+Write-Host ""
 $dttimestamp = [int][double]::Parse((Get-Date -UFormat %s))
 
 # 创建目标目录
@@ -62,16 +68,20 @@ Remove-Item $tempFile -Force
 Write-Host "文件已成功拉取到目录：$targetDir"
 
 # 打印拉取耗时
-$et = (Get-Date).ToString('yyyyMMddHHmmss')
+Write-Host ""
+$endTime = Get-Date
+$endTimeFormatted = $endTime.ToString('yyyy-MM-dd HH:mm:ss')
+Write-Host "结束时间: $endTimeFormatted"
+Write-Host "时间范围: $startTimeFormatted ~ $endTimeFormatted"
+Write-Host ""
+
 $ettimestamp = [int][double]::Parse((Get-Date -UFormat %s))
-Write-Host "$et-$dt"
 $result = $ettimestamp - $dttimestamp
-Write-Host "Result: $result s"
 $costtimeh = [math]::Floor($result / 3600)
 $remainingSeconds = $result % 3600
 $costtimem = [math]::Floor($remainingSeconds / 60)
 $costtimes = $remainingSeconds % 60
-Write-Host "拉取耗时：${costtimeh}h${costtimem}m${costtimes}s"
+Write-Host "拉取耗时：${costtimeh}h${costtimem}m${costtimes}s ($result`s)"
 
 $ifopen = Read-Host "是否打开文件夹（直接回车跳过）？(y/n)"
 if ($ifopen -eq 'y') {
