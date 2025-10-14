@@ -13,6 +13,9 @@ set "day=!dt:~6,2!"
 set "hour=!dt:~8,2!"
 set "minute=!dt:~10,2!"
 set "second=!dt:~12,2!"
+set "startTimeFormatted=!year!-!month!-!day! !hour!:!minute!:!second!"
+echo 开始时间: !startTimeFormatted!
+echo.
 :: 时间戳
 for /f %%i in ('powershell -Command "(Get-Date -UFormat %%s)"') do set dttimestamp=%%i
 
@@ -57,15 +60,24 @@ adb -s !selecteddev! shell "cd !sourceDir! && ls" > temp.txt
 :: 计算进度
 set total=0
 for /f %%f in (temp.txt) do (
-    set /a total+=1
+    if not "%%f"==".nomedia" (
+        set /a total+=1
+    )
 )
+echo 源目录文件总数: !total! (已排除 .nomedia 文件)
+echo.
 set count=0
 for /f %%f in (temp.txt) do (
-    adb -s !selecteddev! pull -a -z any "!sourceDir!%%f" "!targetDir!\%%f"
-    adb pull -a -z any "!sourceDir!%%f" "!targetDir!\%%f"
-    set /a count+=1
+    if not "%%f"==".nomedia" (
+        set /a count+=1
+        echo [!count!/!total!] 正在拉取: %%f
+        adb -s !selecteddev! pull -a -z any "!sourceDir!%%f" "!targetDir!\%%f"
+        echo.
+    ) else (
+        echo 跳过文件: %%f
+    )
 )
-echo !count!/!total!
+echo 完成！共拉取 !count!/!total! 个文件
 
 :: 清理临时文件
 del temp.txt
@@ -73,23 +85,31 @@ del temp.txt
 echo 文件已成功拉取到目录：!targetDir!
 
 :: 打印拉取耗时
+echo.
 set "endtime=%date%%time%"
 for /f "tokens=2 delims==" %%a in ('wmic os get localdatetime /value') do set "et=%%a"
-for /f %%i in ('powershell -Command "(Get-Date -UFormat %%s)"') do set ettimestamp=%%i
-echo starttime ~ endtime : %starttime% ~ %endtime%
-echo dt ~ et : %dt% ~ %et%
+set "eyear=!et:~0,4!"
+set "emonth=!et:~4,2!"
+set "eday=!et:~6,2!"
+set "ehour=!et:~8,2!"
+set "eminute=!et:~10,2!"
+set "esecond=!et:~12,2!"
+set "endTimeFormatted=!eyear!-!emonth!-!eday! !ehour!:!eminute!:!esecond!"
+echo 结束时间: !endTimeFormatted!
+echo 时间范围: !startTimeFormatted! ~ !endTimeFormatted!
+echo.
 
+for /f %%i in ('powershell -Command "(Get-Date -UFormat %%s)"') do set ettimestamp=%%i
 :: 可以使用 PowerShell 进行更准确的计算
 set "Calculation=%ettimestamp% - %dttimestamp%"
 for /f %%i in ('powershell "%Calculation%"') do set "result=%%i"
-echo Result: %result%s
 
 :: 时分秒阅读更清晰
 set /a "costtimeh=result / 3600"
 set /a "remainingSeconds=result %% 3600"
 set /a "costtimem=remainingSeconds / 60"
 set /a "costtimes=remainingSeconds %% 60"
-echo 拉取耗时：%costtimeh%h%costtimem%m%costtimes%s
+echo 拉取耗时：%costtimeh%h%costtimem%m%costtimes%s (%result%s)
 adb -s !selecteddev! shell rm -rf !sourceDir!
 :: 删除源文件
 adb shell rm -rf !sourceDir!
