@@ -12,13 +12,14 @@ if ($devices.Count -eq 0) {
 if ($devices.Count -eq 1) {
     $selecteddev = $devices[0]
     Write-Host "检测到设备: $selecteddev"
-} else {
+}
+else {
     Write-Host "检测到多个设备："
-    for ($i=0; $i -lt $devices.Count; $i++) {
+    for ($i = 0; $i -lt $devices.Count; $i++) {
         Write-Host "$($i+1). $($devices[$i])"
     }
     $devsel = Read-Host "请选择设备编号"
-    $selecteddev = $devices[$devsel-1]
+    $selecteddev = $devices[$devsel - 1]
     Write-Host "已选择设备: $selecteddev"
 }
 
@@ -35,7 +36,13 @@ $targetDir = "P:\video\bilibili\bilibili_download_$dt"
 Write-Host "创建目标目录：$targetDir"
 New-Item -ItemType Directory -Path $targetDir -Force | Out-Null
 $sourceDir = "/sdcard/Android/data/tv.danmaku.bili/download"
-$count = 100
+$inputCount = Read-Host "请输入需要拉取的文件数（默认30）"
+if ($inputCount -eq "") {
+    $count = 30
+}
+else {
+    $count = [int]$inputCount
+}
 
 # 统计源目录文件总数
 $cmdTotal = "cd $sourceDir && ls -l | awk '{print `$8}'"
@@ -46,23 +53,23 @@ Write-Host "源目录文件总数: $allTotal"
 # 使用ADB拉取文件
 $tempFile = "$env:TEMP\bili_temp.txt"
 # `$8是转义的$符号
-$cmd = "cd $sourceDir && ls -ltr | head -n $count | awk '{print `$8}'"
+$cmd = "cd $sourceDir && ls -1tr | head -n $count"
 & adb -s $selecteddev shell $cmd | Out-File -Encoding utf8 $tempFile
 
 # 计算进度
 $files = Get-Content $tempFile | Where-Object { $_.Trim() -ne "" }
 $total = $files.Count
-$count = 0
+$progressCount = 0
 Write-Host "本次待拉取文件数: $total"
+Write-Host "0/$count"
 foreach ($f in $files) {
-    Write-Host "$count/$total"
     & adb -s $selecteddev pull -a -z any "$sourceDir/$f/" "$targetDir/$f"
-    $count++
+    $progressCount++
+    Write-Host "$progressCount/$count"
     & Write-Host "已拉取 $sourceDir/$f 到 $targetDir/$f"
     & adb -s $selecteddev shell "rm -rf '$sourceDir/$f'"
     & Write-Host "已删除 $sourceDir$f"
 }
-Write-Host "$count/$total"
 Remove-Item $tempFile -Force
 
 Write-Host "文件已成功拉取到目录：$targetDir"
