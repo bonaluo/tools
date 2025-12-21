@@ -14,7 +14,7 @@ set "minute=!dt:~10,2!"
 set "second=!dt:~12,2!"
 
 :: 创建目标目录
-set "targetDir=F:\video\telegram\!year!!month!!day!"
+set "targetDir=P:\video\telegram\!year!!month!!day!"
 echo 创建目标目录为：!targetDir!
 mkdir "!targetDir!"
 
