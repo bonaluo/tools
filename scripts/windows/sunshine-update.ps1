@@ -1,7 +1,17 @@
 $ErrorActionPreference = "Stop"
 
-# 设置路径和 GitHub API
-$installDir = "C:\Program Files\Sunshine"
+# 动态获取 Sunshine 安装目录
+$installDir = $null
+try {
+    # 首先尝试从 Get-Command 获取实际安装路径
+    $sunshineCmd = Get-Command sunshine.exe -ErrorAction SilentlyContinue
+    if ($sunshineCmd) {
+        $installDir = Split-Path $sunshineCmd.Source
+    }
+} catch {}
+
+Write-Host "Sunshine 安装目录: $installDir"
+
 $tempDir = "$env:TEMP\sunshine-update"
 $githubApiUrl = "https://api.github.com/repos/LizardByte/Sunshine/releases/latest"
 # GitHub token 用于提高 API 速率限制（可选，若未设置则使用无认证请求）
