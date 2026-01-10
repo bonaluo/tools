@@ -106,8 +106,14 @@ if ($localVersion -and $localVersion.Contains($verNoV)) {
     exit 0
 }
 
+# 在文件名中插入版本号（如果可用），例如 sunshine-installer.exe -> sunshine-installer-2026.105.231052.exe
+$base = [System.IO.Path]::GetFileNameWithoutExtension($assetName)
+$ext = [System.IO.Path]::GetExtension($assetName)
+$verSuffix = ''
+if ($script:verNoV) { $verSuffix = "-$script:verNoV" } elseif ($verNoV) { $verSuffix = "-$verNoV" }
+$fileNameVersioned = "$base$verSuffix$ext"
 # 下载 installer
-$installerPath = Join-Path $tempDir $assetName
+$installerPath = Join-Path $tempDir $fileNameVersioned
 Write-Host "下载: $downloadUrl"
 
 Function Download-File($url, $outPath) {
