@@ -236,8 +236,70 @@ if (-not $installed) {
     Write-Host "安装已完成。"
 }
 
+# 配置防火墙规则
+Function Configure-FirewallRules {
+    Write-Host ""
+    Write-Host "开始配置防火墙规则..."
+    
+    # 检查管理员权限
+    $isAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+    if (-not $isAdmin) {
+        Write-Host "警告：需要管理员权限才能配置防火墙规则。请以管理员身份运行此脚本。"
+        Write-Host "防火墙规则未配置，您需要手动创建以下规则："
+        Write-Host "  1. TCP 端口: 47984, 47989, 47990, 48010"
+        Write-Host "  2. UDP 端口: 47998-48000"
+        return
+    }
+    
+    # 创建 TCP 入站规则
+    $tcpRuleName = "sunshine tcp"
+    $tcpRuleExists = Get-NetFirewallRule -DisplayName $tcpRuleName -ErrorAction SilentlyContinue
+    if ($tcpRuleExists) {
+        Write-Host "TCP 防火墙规则 '$tcpRuleName' 已存在，跳过创建。"
+    } else {
+        try {
+            $tcpPorts = @("47984", "47989", "47990", "48010")
+            New-NetFirewallRule -DisplayName $tcpRuleName -Direction Inbound -Protocol TCP -LocalPort $tcpPorts -Action Allow -ErrorAction Stop
+            Write-Host "TCP 防火墙规则 '$tcpRuleName' 创建成功。"
+        } catch {
+            Write-Host "创建 TCP 防火墙规则失败：$($_.Exception.Message)"
+            Write-Host "如果命令失败，请尝试为每个端口单独创建规则。"
+        }
+    }
+    
+    # 创建 UDP 入站规则
+    $udpRuleName = "sunshine udp"
+    $udpRuleExists = Get-NetFirewallRule -DisplayName $udpRuleName -ErrorAction SilentlyContinue
+    if ($udpRuleExists) {
+        Write-Host "UDP 防火墙规则 '$udpRuleName' 已存在，跳过创建。"
+    } else {
+        try {
+            New-NetFirewallRule -DisplayName $udpRuleName -Direction Inbound -Protocol UDP -LocalPort 47998-48000 -Action Allow -ErrorAction Stop
+            Write-Host "UDP 防火墙规则 '$udpRuleName' 创建成功。"
+        } catch {
+            Write-Host "创建 UDP 防火墙规则失败：$($_.Exception.Message)"
+        }
+    }
+    
+    # 验证防火墙规则
+    Write-Host ""
+    Write-Host "防火墙规则验证："
+    $rules = Get-NetFirewallRule -DisplayName "sunshine*" -ErrorAction SilentlyContinue
+    if ($rules) {
+        $rules | Format-Table DisplayName, Enabled, Direction, Action -AutoSize
+    } else {
+        Write-Host "未找到 Sunshine 防火墙规则。"
+    }
+}
+
+# 配置防火墙规则（仅在安装成功后执行）
+if ($installed) {
+    Configure-FirewallRules
+}
+
 # 清理临时文件
 Remove-Item -Recurse -Force $tempDir
 
+Write-Host ""
 Write-Host "更新/安装流程结束。"
 Read-Host -Prompt "按回车键退出"
