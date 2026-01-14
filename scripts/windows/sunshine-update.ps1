@@ -44,6 +44,16 @@ $githubToken = $env:GITHUB_TOKEN
 # 创建临时目录
 if (!(Test-Path $tempDir)) { New-Item -ItemType Directory -Path $tempDir | Out-Null }
 
+# 退出函数
+Function Exit-Script {
+    param([int]$exitCode = 0)
+    Remove-Item -Recurse -Force $tempDir -ErrorAction SilentlyContinue
+    if ($exitCode -eq 0) {
+        Read-Host -Prompt "按回车键退出"
+    }
+    exit $exitCode
+}
+
 # 检查本地版本（尝试读取可执行文件的文件版本信息）
 $localVersion = ""
 if ($isInstalled -and $installDir) {
@@ -84,75 +94,115 @@ while ($retryCount -lt $maxRetries) {
             Write-Host "  2. 设置 GitHub token 以获得更高的请求限制："
             Write-Host "     set GITHUB_TOKEN=your_personal_access_token"
             Write-Host "     然后重新运行此脚本"
-            Remove-Item -Recurse -Force $tempDir
-            Read-Host -Prompt "按回车键退出"
-            exit 1
+            Exit-Script 1
         }
         Write-Host "查询失败（第 $retryCount/$maxRetries 次），等待 5 秒后重试..."
         Start-Sleep -Seconds 5
     }
 }
 
-# 询问用户选择版本类型
-Write-Host ""
-Write-Host "请选择要安装的版本类型："
-Write-Host "  1. 稳定版本 (Stable)"
-Write-Host "  2. Pre-release 版本 (包括 Beta、Alpha 等)"
-$versionTypeChoice = Read-Host "请输入选项 (1 或 2，默认为 1)"
+# 主菜单循环：选择版本类型和版本
+$selectedRelease = $null
+$shouldExit = $false
 
-if ($versionTypeChoice -eq "2") {
-    $includePrerelease = $true
-    Write-Host "已选择：Pre-release 版本"
-} else {
-    $includePrerelease = $false
-    Write-Host "已选择：稳定版本"
-}
-
-# 过滤 releases：根据用户选择过滤稳定版或包含 pre-release
-$filteredReleases = $allReleases | Where-Object {
-    if ($includePrerelease) {
-        $true  # 包含所有版本（稳定版和 pre-release）
-    } else {
-        -not $_.prerelease  # 只包含稳定版本
+while ($null -eq $selectedRelease -and -not $shouldExit) {
+    # 询问用户选择版本类型
+    Write-Host ""
+    Write-Host "请选择要安装的版本类型："
+    Write-Host "  1. 稳定版本 (Stable)"
+    Write-Host "  2. Pre-release 版本 (包括 Beta、Alpha 等)"
+    Write-Host "  0. 退出"
+    $versionTypeChoice = Read-Host "请输入选项 (0/1/2，默认为 1)"
+    
+    # 处理退出选项
+    if ($versionTypeChoice -eq "0") {
+        Write-Host "已取消操作。"
+        Exit-Script 0
     }
-} | Select-Object -First 10
-
-if ($filteredReleases.Count -eq 0) {
-    Write-Host "错误：未找到符合条件的版本。"
-    Remove-Item -Recurse -Force $tempDir
-    Read-Host -Prompt "按回车键退出"
-    exit 1
-}
-
-# 显示版本列表供用户选择
-Write-Host ""
-Write-Host "可用的版本列表（最近 10 个）："
-Write-Host "=========================================="
-for ($i = 0; $i -lt $filteredReleases.Count; $i++) {
-    $release = $filteredReleases[$i]
-    $versionLabel = $release.tag_name
-    $prereleaseLabel = if ($release.prerelease) { " [Pre-release]" } else { " [Stable]" }
-    $publishedDate = [DateTime]::Parse($release.published_at).ToString("yyyy-MM-dd")
-    Write-Host "  $($i + 1). $versionLabel$prereleaseLabel (发布于: $publishedDate)"
-}
-Write-Host "=========================================="
-
-# 让用户选择版本
-$selectedIndex = -1
-while ($selectedIndex -lt 1 -or $selectedIndex -gt $filteredReleases.Count) {
-    $userInput = Read-Host "请输入要安装的版本编号 (1-$($filteredReleases.Count))"
-    if ([int]::TryParse($userInput, [ref]$selectedIndex)) {
-        if ($selectedIndex -lt 1 -or $selectedIndex -gt $filteredReleases.Count) {
-            Write-Host "无效的选择，请输入 1 到 $($filteredReleases.Count) 之间的数字。"
-            $selectedIndex = -1
+    
+    # 确定版本类型
+    if ($versionTypeChoice -eq "2") {
+        $includePrerelease = $true
+        Write-Host "已选择：Pre-release 版本"
+    } else {
+        $includePrerelease = $false
+        Write-Host "已选择：稳定版本"
+    }
+    
+    # 过滤 releases：根据用户选择过滤稳定版或包含 pre-release
+    $filteredReleases = $allReleases | Where-Object {
+        if ($includePrerelease) {
+            $true  # 包含所有版本（稳定版和 pre-release）
+        } else {
+            -not $_.prerelease  # 只包含稳定版本
         }
-    } else {
-        Write-Host "无效的输入，请输入数字。"
+    } | Select-Object -First 10
+    
+    if ($filteredReleases.Count -eq 0) {
+        Write-Host "错误：未找到符合条件的版本。"
+        Write-Host ""
+        $retryChoice = Read-Host "是否返回重新选择？(Y/N，默认为 Y)"
+        if ($retryChoice -ne "N" -and $retryChoice -ne "n") {
+            continue  # 返回重新选择版本类型
+        } else {
+            Exit-Script 1
+        }
+    }
+    
+    # 版本选择循环
+    $versionSelected = $false
+    while (-not $versionSelected -and -not $shouldExit) {
+        # 显示版本列表供用户选择
+        Write-Host ""
+        Write-Host "可用的版本列表（最近 10 个）："
+        Write-Host "=========================================="
+        for ($i = 0; $i -lt $filteredReleases.Count; $i++) {
+            $release = $filteredReleases[$i]
+            $versionLabel = $release.tag_name
+            $prereleaseLabel = if ($release.prerelease) { " [Pre-release]" } else { " [Stable]" }
+            $publishedDate = [DateTime]::Parse($release.published_at).ToString("yyyy-MM-dd")
+            Write-Host "  $($i + 1). $versionLabel$prereleaseLabel (发布于: $publishedDate)"
+        }
+        Write-Host "=========================================="
+        Write-Host "  B. 返回上一层（重新选择版本类型）"
+        Write-Host "  0. 退出"
+        Write-Host "=========================================="
+        
+        # 让用户选择版本
         $selectedIndex = -1
+        $userInput = Read-Host "请输入要安装的版本编号 (1-$($filteredReleases.Count))，或输入 B/0"
+        
+        # 处理特殊选项
+        if ($userInput -eq "0" -or $userInput -eq "q" -or $userInput -eq "Q") {
+            Write-Host "已取消操作。"
+            Exit-Script 0
+        }
+        
+        if ($userInput -eq "B" -or $userInput -eq "b" -or $userInput -eq "back") {
+            Write-Host "返回上一层..."
+            break  # 跳出版本选择循环，返回版本类型选择
+        }
+        
+        # 处理数字输入
+        if ([int]::TryParse($userInput, [ref]$selectedIndex)) {
+            if ($selectedIndex -ge 1 -and $selectedIndex -le $filteredReleases.Count) {
+                $selectedRelease = $filteredReleases[$selectedIndex - 1]
+                $versionSelected = $true
+            } else {
+                Write-Host "无效的选择，请输入 1 到 $($filteredReleases.Count) 之间的数字，或输入 B/0。"
+            }
+        } else {
+            Write-Host "无效的输入，请输入数字、B（返回）或 0（退出）。"
+        }
     }
 }
 
-$selectedRelease = $filteredReleases[$selectedIndex - 1]
+# 如果用户选择退出，清理并退出
+if ($shouldExit) {
+    Exit-Script 0
+}
+
+# 确认选择的版本
 $latestVersion = $selectedRelease.tag_name
 Write-Host ""
 Write-Host "已选择版本: $latestVersion"
@@ -174,9 +224,7 @@ if (-not $asset) {
     Write-Host "未在 release 中找到 Windows 安装程序 (.exe)，脚本退出。"
     Write-Host "可用的 assets："
     $selectedRelease.assets | ForEach-Object { Write-Host "  - $($_.name)" }
-    Remove-Item -Recurse -Force $tempDir
-    Read-Host -Prompt "按回车键退出"
-    exit 1
+    Exit-Script 1
 }
 
 $assetName = $asset.name
@@ -192,9 +240,7 @@ if ($isInstalled -and $localVersion -and $localVersion.Contains($verNoV)) {
     $continueChoice = Read-Host "是否仍要继续安装？(Y/N，默认为 N)"
     if ($continueChoice -ne "Y" -and $continueChoice -ne "y") {
         Write-Host "已取消安装。"
-        Remove-Item -Recurse -Force $tempDir
-        Read-Host -Prompt "按回车键退出"
-        exit 0
+        Exit-Script 0
     }
     Write-Host "将继续安装..."
 }
@@ -295,9 +341,7 @@ Function Download-File($url, $outPath) {
 $success = Download-File $downloadUrl $installerPath
 if (-not $success) {
     Write-Host "下载失败，脚本退出。"
-    Remove-Item -Recurse -Force $tempDir
-    Read-Host -Prompt "按回车键退出"
-    exit 1
+    Exit-Script 1
 }
 
 Write-Host "下载完成: $installerPath"
@@ -483,9 +527,7 @@ if ($installed) {
     Configure-FirewallRules
 }
 
-# 清理临时文件
-Remove-Item -Recurse -Force $tempDir
-
+# 清理临时文件并退出
 Write-Host ""
 Write-Host "更新/安装流程结束。"
-Read-Host -Prompt "按回车键退出"
+Exit-Script 0
