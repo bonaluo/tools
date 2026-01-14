@@ -36,7 +36,7 @@ if ($isInstalled) {
 }
 
 $tempDir = "$env:TEMP\sunshine-update"
-$githubApiUrl = "https://api.github.com/repos/LizardByte/Sunshine/releases/latest"
+$githubApiUrl = "https://api.github.com/repos/LizardByte/Sunshine/releases"
 # GitHub token 用于提高 API 速率限制（可选，若未设置则使用无认证请求）
 # 可在环境变量 GITHUB_TOKEN 中设置，或在此硬编码
 $githubToken = $env:GITHUB_TOKEN
@@ -57,7 +57,7 @@ if ($isInstalled -and $installDir) {
     Write-Host "本地版本: $localVersion"
 }
 
-Write-Host "正在查询最新版本..."
+Write-Host "正在查询可用版本..."
 # 构造请求头：自定义 User-Agent 和可选的 GitHub token
 $headers = @{ 'User-Agent' = 'sunshine-update-script' }
 if ($githubToken) {
@@ -65,18 +65,18 @@ if ($githubToken) {
     Write-Host "使用 GitHub token 进行认证"
 }
 
-# 获取最新版本，带重试机制
+# 获取所有 releases，带重试机制
 $maxRetries = 3
 $retryCount = 0
-$latestJson = $null
+$allReleases = $null
 while ($retryCount -lt $maxRetries) {
     try {
-        $latestJson = Invoke-RestMethod -Uri $githubApiUrl -Headers $headers -ErrorAction Stop
+        $allReleases = Invoke-RestMethod -Uri $githubApiUrl -Headers $headers -ErrorAction Stop
         break
     } catch {
         $retryCount++
         if ($retryCount -ge $maxRetries) {
-            Write-Host "错误：无法获取最新版本信息，已重试 $maxRetries 次。"
+            Write-Host "错误：无法获取版本信息，已重试 $maxRetries 次。"
             Write-Host "错误详情: $($_.Exception.Message)"
             Write-Host ""
             Write-Host "解决方案："
@@ -93,18 +93,79 @@ while ($retryCount -lt $maxRetries) {
     }
 }
 
-$latestVersion = $latestJson.tag_name
-Write-Host "最新版本: $latestVersion"
+# 询问用户选择版本类型
+Write-Host ""
+Write-Host "请选择要安装的版本类型："
+Write-Host "  1. 稳定版本 (Stable)"
+Write-Host "  2. Pre-release 版本 (包括 Beta、Alpha 等)"
+$versionTypeChoice = Read-Host "请输入选项 (1 或 2，默认为 1)"
+
+if ($versionTypeChoice -eq "2") {
+    $includePrerelease = $true
+    Write-Host "已选择：Pre-release 版本"
+} else {
+    $includePrerelease = $false
+    Write-Host "已选择：稳定版本"
+}
+
+# 过滤 releases：根据用户选择过滤稳定版或包含 pre-release
+$filteredReleases = $allReleases | Where-Object {
+    if ($includePrerelease) {
+        $true  # 包含所有版本（稳定版和 pre-release）
+    } else {
+        -not $_.prerelease  # 只包含稳定版本
+    }
+} | Select-Object -First 10
+
+if ($filteredReleases.Count -eq 0) {
+    Write-Host "错误：未找到符合条件的版本。"
+    Remove-Item -Recurse -Force $tempDir
+    Read-Host -Prompt "按回车键退出"
+    exit 1
+}
+
+# 显示版本列表供用户选择
+Write-Host ""
+Write-Host "可用的版本列表（最近 10 个）："
+Write-Host "=========================================="
+for ($i = 0; $i -lt $filteredReleases.Count; $i++) {
+    $release = $filteredReleases[$i]
+    $versionLabel = $release.tag_name
+    $prereleaseLabel = if ($release.prerelease) { " [Pre-release]" } else { " [Stable]" }
+    $publishedDate = [DateTime]::Parse($release.published_at).ToString("yyyy-MM-dd")
+    Write-Host "  $($i + 1). $versionLabel$prereleaseLabel (发布于: $publishedDate)"
+}
+Write-Host "=========================================="
+
+# 让用户选择版本
+$selectedIndex = -1
+while ($selectedIndex -lt 1 -or $selectedIndex -gt $filteredReleases.Count) {
+    $userInput = Read-Host "请输入要安装的版本编号 (1-$($filteredReleases.Count))"
+    if ([int]::TryParse($userInput, [ref]$selectedIndex)) {
+        if ($selectedIndex -lt 1 -or $selectedIndex -gt $filteredReleases.Count) {
+            Write-Host "无效的选择，请输入 1 到 $($filteredReleases.Count) 之间的数字。"
+            $selectedIndex = -1
+        }
+    } else {
+        Write-Host "无效的输入，请输入数字。"
+        $selectedIndex = -1
+    }
+}
+
+$selectedRelease = $filteredReleases[$selectedIndex - 1]
+$latestVersion = $selectedRelease.tag_name
+Write-Host ""
+Write-Host "已选择版本: $latestVersion"
 
 # 在 assets 中查找 Windows installer (.exe)
 # 优先匹配 Windows + .exe 的组合，避免选中 Linux/Debian 包
-$asset = $latestJson.assets | Where-Object { 
+$asset = $selectedRelease.assets | Where-Object { 
     $_.name -match "(?i)windows.*\.exe$|\.exe$.*windows" -or $_.name -match "(?i)windows-amd64.*\.exe$"
 } | Select-Object -First 1
 
 # 如果没找到，退回到宽松匹配
 if (-not $asset) {
-    $asset = $latestJson.assets | Where-Object { 
+    $asset = $selectedRelease.assets | Where-Object { 
         $_.name -match "(?i)installer.*exe$|exe$.*installer" 
     } | Select-Object -First 1
 }
@@ -112,7 +173,7 @@ if (-not $asset) {
 if (-not $asset) {
     Write-Host "未在 release 中找到 Windows 安装程序 (.exe)，脚本退出。"
     Write-Host "可用的 assets："
-    $latestJson.assets | ForEach-Object { Write-Host "  - $($_.name)" }
+    $selectedRelease.assets | ForEach-Object { Write-Host "  - $($_.name)" }
     Remove-Item -Recurse -Force $tempDir
     Read-Host -Prompt "按回车键退出"
     exit 1
@@ -122,14 +183,20 @@ $assetName = $asset.name
 $downloadUrl = $asset.browser_download_url
 Write-Host "发现安装包: $assetName"
 
-# 简单版本比较：如果本地版本字符串包含最新版本号（去掉前导 v），则认为已是最新
+# 版本比较：如果本地版本字符串包含所选版本号（去掉前导 v），则询问用户是否仍要安装
 # 如果未安装，跳过版本检查，直接进行安装
 $verNoV = $latestVersion.TrimStart('v')
 if ($isInstalled -and $localVersion -and $localVersion.Contains($verNoV)) {
-    Write-Host "已是最新版本，无需更新。"
-    Remove-Item -Recurse -Force $tempDir
-    Read-Host -Prompt "按回车键退出"
-    exit 0
+    Write-Host ""
+    Write-Host "检测到本地已安装版本 $localVersion，与选择的版本 $latestVersion 相同。"
+    $continueChoice = Read-Host "是否仍要继续安装？(Y/N，默认为 N)"
+    if ($continueChoice -ne "Y" -and $continueChoice -ne "y") {
+        Write-Host "已取消安装。"
+        Remove-Item -Recurse -Force $tempDir
+        Read-Host -Prompt "按回车键退出"
+        exit 0
+    }
+    Write-Host "将继续安装..."
 }
 
 # 在文件名中插入版本号（如果可用），例如 sunshine-installer.exe -> sunshine-installer-2026.105.231052.exe
