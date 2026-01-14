@@ -2,15 +2,38 @@ $ErrorActionPreference = "Stop"
 
 # 动态获取 Sunshine 安装目录
 $installDir = $null
+$isInstalled = $false
 try {
     # 首先尝试从 Get-Command 获取实际安装路径
     $sunshineCmd = Get-Command sunshine.exe -ErrorAction SilentlyContinue
     if ($sunshineCmd) {
         $installDir = Split-Path $sunshineCmd.Source
+        $isInstalled = $true
     }
 } catch {}
 
-Write-Host "Sunshine 安装目录: $installDir"
+# 如果通过 PATH 找不到，尝试检查常见的安装位置
+if (-not $isInstalled) {
+    $commonPaths = @(
+        "$env:ProgramFiles\Sunshine",
+        "${env:ProgramFiles(x86)}\Sunshine",
+        "$env:LOCALAPPDATA\Programs\Sunshine"
+    )
+    foreach ($path in $commonPaths) {
+        $exePath = Join-Path $path "sunshine.exe"
+        if (Test-Path $exePath) {
+            $installDir = $path
+            $isInstalled = $true
+            break
+        }
+    }
+}
+
+if ($isInstalled) {
+    Write-Host "检测到 Sunshine 已安装，安装目录: $installDir"
+} else {
+    Write-Host "未检测到 Sunshine 安装，将进行首次安装。"
+}
 
 $tempDir = "$env:TEMP\sunshine-update"
 $githubApiUrl = "https://api.github.com/repos/LizardByte/Sunshine/releases/latest"
@@ -23,14 +46,16 @@ if (!(Test-Path $tempDir)) { New-Item -ItemType Directory -Path $tempDir | Out-N
 
 # 检查本地版本（尝试读取可执行文件的文件版本信息）
 $localVersion = ""
-$exePath = Join-Path $installDir "sunshine.exe"
-if (Test-Path $exePath) {
-    try {
-        $fv = [System.Diagnostics.FileVersionInfo]::GetVersionInfo($exePath)
-        $localVersion = $fv.ProductVersion
-    } catch {}
+if ($isInstalled -and $installDir) {
+    $exePath = Join-Path $installDir "sunshine.exe"
+    if (Test-Path $exePath) {
+        try {
+            $fv = [System.Diagnostics.FileVersionInfo]::GetVersionInfo($exePath)
+            $localVersion = $fv.ProductVersion
+        } catch {}
+    }
+    Write-Host "本地版本: $localVersion"
 }
-Write-Host "本地版本: $localVersion"
 
 Write-Host "正在查询最新版本..."
 # 构造请求头：自定义 User-Agent 和可选的 GitHub token
@@ -98,8 +123,9 @@ $downloadUrl = $asset.browser_download_url
 Write-Host "发现安装包: $assetName"
 
 # 简单版本比较：如果本地版本字符串包含最新版本号（去掉前导 v），则认为已是最新
+# 如果未安装，跳过版本检查，直接进行安装
 $verNoV = $latestVersion.TrimStart('v')
-if ($localVersion -and $localVersion.Contains($verNoV)) {
+if ($isInstalled -and $localVersion -and $localVersion.Contains($verNoV)) {
     Write-Host "已是最新版本，无需更新。"
     Remove-Item -Recurse -Force $tempDir
     Read-Host -Prompt "按回车键退出"
@@ -209,6 +235,61 @@ if (-not $success) {
 
 Write-Host "下载完成: $installerPath"
 
+# 将 Sunshine 安装目录添加到系统 PATH
+Function Add-SunshineToPath {
+    param([string]$sunshinePath)
+    
+    if (-not $sunshinePath -or -not (Test-Path $sunshinePath)) {
+        Write-Host "警告：无法将 Sunshine 添加到 PATH，安装路径无效: $sunshinePath"
+        return $false
+    }
+    
+    Write-Host ""
+    Write-Host "开始将 Sunshine 添加到系统 PATH..."
+    
+    # 检查管理员权限
+    $isAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+    if (-not $isAdmin) {
+        Write-Host "警告：需要管理员权限才能修改系统 PATH。请以管理员身份运行此脚本。"
+        Write-Host "您可以手动将以下路径添加到系统 PATH："
+        Write-Host "  $sunshinePath"
+        return $false
+    }
+    
+    # 获取当前系统 PATH
+    $currentPath = [Environment]::GetEnvironmentVariable("Path", "Machine")
+    
+    # 检查是否已包含该路径
+    $pathArray = $currentPath -split ';' | Where-Object { $_ -ne '' }
+    if ($pathArray -contains $sunshinePath) {
+        Write-Host "Sunshine 安装目录已在系统 PATH 中，无需添加。"
+        return $true
+    }
+    
+    # 添加到系统 PATH
+    try {
+        $newPath = $currentPath
+        if ($newPath -and -not $newPath.EndsWith(';')) {
+            $newPath += ';'
+        }
+        $newPath += $sunshinePath
+        
+        [Environment]::SetEnvironmentVariable("Path", $newPath, "Machine")
+        Write-Host "成功将 Sunshine 安装目录添加到系统 PATH：$sunshinePath"
+        Write-Host "注意：需要重新打开命令行窗口或重新登录才能使 PATH 更改生效。"
+        
+        # 更新当前会话的 PATH（立即生效）
+        $env:Path += ";$sunshinePath"
+        Write-Host "已更新当前会话的 PATH。"
+        return $true
+    } catch {
+        Write-Host "添加 Sunshine 到系统 PATH 失败：$($_.Exception.Message)"
+        Write-Host "您可以手动将以下路径添加到系统 PATH："
+        Write-Host "  $sunshinePath"
+        return $false
+    }
+}
+
 # 尝试静默安装的常见参数列表
 $silentFlagsList = @('/S','/VERYSILENT','/SILENT','/quiet','/qn')
 $installed = $false
@@ -232,8 +313,46 @@ if (-not $installed) {
     Write-Host "未能以常见静默参数完成安装，将以交互方式运行安装程序。"
     Start-Process -FilePath $installerPath
     Write-Host "请按照安装程序完成安装。"
+    Write-Host ""
+    Write-Host "注意：安装完成后，请重新运行此脚本以配置 PATH 和防火墙规则。"
 } else {
     Write-Host "安装已完成。"
+    
+    # 重新检测安装目录（安装后可能位置发生变化）
+    $newInstallDir = $null
+    try {
+        $sunshineCmd = Get-Command sunshine.exe -ErrorAction SilentlyContinue
+        if ($sunshineCmd) {
+            $newInstallDir = Split-Path $sunshineCmd.Source
+        }
+    } catch {}
+    
+    # 如果通过 PATH 找不到，尝试检查常见的安装位置
+    if (-not $newInstallDir) {
+        $commonPaths = @(
+            "$env:ProgramFiles\Sunshine",
+            "${env:ProgramFiles(x86)}\Sunshine",
+            "$env:LOCALAPPDATA\Programs\Sunshine"
+        )
+        foreach ($path in $commonPaths) {
+            $exePath = Join-Path $path "sunshine.exe"
+            if (Test-Path $exePath) {
+                $newInstallDir = $path
+                break
+            }
+        }
+    }
+    
+    # 如果找到了新的安装目录，添加到 PATH
+    if ($newInstallDir) {
+        Add-SunshineToPath -sunshinePath $newInstallDir
+        $installDir = $newInstallDir
+    } elseif ($installDir) {
+        # 如果之前有安装目录，也尝试添加到 PATH
+        Add-SunshineToPath -sunshinePath $installDir
+    } else {
+        Write-Host "警告：无法自动检测 Sunshine 安装目录，请手动将其添加到系统 PATH。"
+    }
 }
 
 # 配置防火墙规则
