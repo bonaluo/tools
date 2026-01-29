@@ -1,0 +1,223 @@
+{
+    "config": {
+        // 是否使用GitHub Token进行API请求
+        // 启用后可以从环境变量中读取Token，提高API速率限制
+        "useGithubToken": false,
+
+        // GitHub Token的环境变量名称
+        "githubTokenEnv": "GITHUB_TOKEN",
+
+        // 当软件未安装时是否自动安装
+        "installIfNotFound": false,
+
+        // 全局日志级别: DEBUG, INFO, WARN, ERROR
+        "logLevel": "INFO",
+
+        // 是否启用下载缓存
+        "enableCache": true,
+
+        // 缓存过期时间（秒）
+        "cacheExpiry": 300,
+
+        // 默认下载方式: auto, idm, curl, bits, webrequest
+        "defaultDownloadMethod": "auto",
+
+        // 下载重试次数
+        "downloadRetries": 3,
+
+        // 下载重试延迟（秒）
+        "downloadRetryDelay": 5
+    },
+
+    "softwares": [
+        {
+            "ddns-go": {
+                // GitHub仓库URL
+                "repoUrl": "https://github.com/jeessy2/ddns-go",
+
+                // 下载文件的后缀匹配模式
+                // 支持通配符 * 和正则表达式
+                "suffix": "windows_amd64.zip",
+
+                // 未安装时是否自动安装
+                "installIfNotFound": true,
+
+                // 安装目录配置
+                "installHome": {
+                    // 类型: command - 通过命令获取路径; path - 直接指定路径
+                    "type": "command",
+
+                    // 当type为command时使用的命令
+                    "command": "where ddns-go",
+
+                    // 当无法确定路径时使用的默认路径
+                    "default": "C:\\Program Files\\ddns-go"
+                },
+
+                // 版本检测配置
+                "versionCheck": {
+                    // 类型: command - 通过命令获取版本; fileVersion - 通过文件版本信息; regex - 通过正则表达式从文件提取
+                    "type": "command",
+
+                    // 当type为command时使用的命令
+                    "command": "ddns-go -v",
+
+                    // 用于提取版本号的正则表达式模式
+                    "pattern": "v?(\\d+\\.\\d+\\.\\d+)",
+
+                    // 当type为fileVersion或regex时使用的文件路径
+                    "filePath": "ddns-go.exe"
+                },
+
+                // 下载配置
+                "download": {
+                    // 下载方法: auto, idm, curl, bits, webrequest
+                    "method": "auto",
+
+                    // 下载超时时间（秒）
+                    "timeout": 300,
+
+                    // 自定义请求头（可选）
+                    "headers": {
+                        "User-Agent": "github-update-script"
+                    }
+                },
+
+                // 安装配置
+                "install": {
+                    // 安装类型: archive - 解压安装; installer - 运行安装程序; copy - 直接复制文件
+                    "type": "archive",
+
+                    // 当type为archive时的压缩包类型: zip, targz, 7z
+                    "archiveType": "zip",
+
+                    // 当type为installer时的静默安装参数
+                    "installerArgs": ["/S", "/VERYSILENT"],
+
+                    // 目标安装目录（可选，覆盖installHome配置）
+                    "targetDir": "C:\\Program Files\\ddns-go"
+                },
+
+                // 额外配置
+                "extra": {
+                    // 是否需要管理员权限
+                    "requiresAdmin": true,
+
+                    // 安装后需要重启的服务名称
+                    "restartService": "ddns-go",
+
+                    // 脚本配置
+                    "scripts": {
+                        // 安装前执行的脚本（支持变量替换）
+                        "before": [
+                            "echo 开始安装 %softwareName% 版本 %version%",
+                            "net stop %restartService% 2>nul || echo 服务未运行"
+                        ],
+
+                        // 安装后执行的脚本（支持变量替换）
+                        "after": [
+                            "cd \"%installHome%\"",
+                            "ddns-go.exe -s install",
+                            "net start %restartService%",
+                            "echo 安装完成，服务已启动"
+                        ],
+
+                        // 脚本执行出错时是否停止
+                        "stopOnError": true
+                    },
+
+                    // 环境变量配置（安装后设置）
+                    "environment": {
+                        "DDNS_GO_HOME": "%installHome%",
+                        "PATH": "%installHome%;%PATH%"
+                    },
+
+                    // 防火墙规则配置（可选）
+                    "firewall": {
+                        "enable": true,
+                        "rules": [
+                            {
+                                "name": "ddns-go HTTP",
+                                "port": 9876,
+                                "protocol": "TCP",
+                                "direction": "inbound",
+                                "action": "allow"
+                            }
+                        ]
+                    }
+                }
+            }
+        },
+
+        {
+            "sunshine": {
+                "repoUrl": "https://github.com/LizardByte/Sunshine",
+                "suffix": "windows-amd64.exe",
+                "installIfNotFound": true,
+
+                "installHome": {
+                    "type": "path",
+                    "path": "C:\\Program Files\\Sunshine",
+                    "default": "C:\\Program Files\\Sunshine"
+                },
+
+                "versionCheck": {
+                    "type": "fileVersion",
+                    "filePath": "sunshine.exe"
+                },
+
+                "download": {
+                    "method": "auto"
+                },
+
+                "install": {
+                    "type": "installer",
+                    "installerArgs": ["/S", "/VERYSILENT"]
+                },
+
+                "extra": {
+                    "requiresAdmin": true,
+                    "restartService": "SunshineService",
+
+                    "scripts": {
+                        "after": [
+                            "echo Sunshine已安装到 %installHome%",
+                            "echo 请访问 http://localhost:47990 进行配置"
+                        ]
+                    }
+                }
+            }
+        },
+
+        {
+            "example-tool": {
+                "repoUrl": "https://github.com/owner/example-tool",
+                "suffix": "*.tar.gz",
+                "installIfNotFound": false,
+
+                "installHome": {
+                    "type": "command",
+                    "command": "where example-tool",
+                    "default": "C:\\Tools\\example"
+                },
+
+                "versionCheck": {
+                    "type": "regex",
+                    "filePath": "version.txt",
+                    "pattern": "version:\\s*(\\d+\\.\\d+\\.\\d+)"
+                },
+
+                "extra": {
+                    "requiresAdmin": false,
+
+                    "scripts": {
+                        "after": [
+                            "echo 工具已更新到版本 %version%",
+                            "echo 安装目录: %installHome%"
+                        ]
+                    }
+                }
+            }
+        }
+    ]
+}
