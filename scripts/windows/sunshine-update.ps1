@@ -453,6 +453,17 @@ while ($mainMenuLoop) {
     Write-Host "=========================================="
     if ($isInstalled) {
         Write-Host "检测到 Sunshine 已安装，安装目录: $installDir"
+        # 检查本地版本（尝试读取可执行文件的文件版本信息）
+        $localVersion = ""
+        $exePath = Join-Path $installDir "sunshine.exe"
+        if (Test-Path $exePath) {
+            try {
+                $fv = [System.Diagnostics.FileVersionInfo]::GetVersionInfo($exePath)
+                $localVersion = $fv.ProductVersion
+                Write-Host "本地版本: $localVersion"
+            }
+            catch {}
+        }
     }
     else {
         Write-Host "未检测到 Sunshine 安装。"
@@ -461,29 +472,17 @@ while ($mainMenuLoop) {
     Write-Host "请选择操作："
     Write-Host "  1. 安装/更新 Sunshine"
     Write-Host "  2. 仅配置防火墙规则"
-    Write-Host "  0. 退出"
-    $mainChoice = Read-Host "请输入选项 (0/1/2，默认为 1)"
+    Write-Host "  Q. 退出"
+    $mainChoice = Read-Host "请输入选项 (Q/1/2，默认为 1)"
 
-    if ($mainChoice -eq "0") {
+    if ($mainChoice -eq "Q" -or $mainChoice -eq "q") {
         Write-Host "已退出。"
         Exit-Script 0
     }
 
     # 如果选择安装/更新，进入安装流程
     if ($mainChoice -eq "1" -or $mainChoice -eq "") {
-        # 检查本地版本（尝试读取可执行文件的文件版本信息）
-        $localVersion = ""
-        if ($isInstalled -and $installDir) {
-            $exePath = Join-Path $installDir "sunshine.exe"
-            if (Test-Path $exePath) {
-                try {
-                    $fv = [System.Diagnostics.FileVersionInfo]::GetVersionInfo($exePath)
-                    $localVersion = $fv.ProductVersion
-                }
-                catch {}
-            }
-            Write-Host "本地版本: $localVersion"
-        }
+        # 本地版本已在主菜单检测并显示，这里直接使用 $localVersion 变量
         
         # 获取版本信息（带缓存）
         $allReleases = Get-AllReleases
@@ -502,8 +501,8 @@ while ($mainMenuLoop) {
             Write-Host "  1. 稳定版本 (Stable)"
             Write-Host "  2. Pre-release 版本 (包括 Beta、Alpha 等)"
             Write-Host "  B. 返回主菜单"
-            Write-Host "  0. 退出"
-            $versionTypeChoice = Read-Host "请输入选项 (0/1/2/B，默认为 1)"
+            Write-Host "  Q. 退出"
+            $versionTypeChoice = Read-Host "请输入选项 (Q/1/2/B，默认为 1)"
             
             # 处理返回主菜单选项
             if ($versionTypeChoice -eq "B" -or $versionTypeChoice -eq "b" -or $versionTypeChoice -eq "back") {
@@ -513,7 +512,7 @@ while ($mainMenuLoop) {
             }
             
             # 处理退出选项
-            if ($versionTypeChoice -eq "0") {
+            if ($versionTypeChoice -eq "Q" -or $versionTypeChoice -eq "q") {
                 Write-Host "已取消操作。"
                 Exit-Script 0
             }
@@ -565,7 +564,16 @@ while ($mainMenuLoop) {
                     $versionLabel = $release.tag_name
                     $prereleaseLabel = if ($release.prerelease) { " [Pre-release]" } else { " [Stable]" }
                     $publishedDate = [DateTime]::Parse($release.published_at).ToString("yyyy-MM-dd")
-                    Write-Host "  $($i + 1). $versionLabel$prereleaseLabel (发布于: $publishedDate)"
+                    
+                    # 检查当前版本是否与列表中的版本相同
+                    $verNoV = $release.tag_name.TrimStart('v')
+                    $marker = ""
+                    if ($isInstalled -and $localVersion -and $localVersion.Contains($verNoV)) {
+                        $marker = "*"
+                    } else {
+                        $marker = " "
+                    }
+                    Write-Host "  $($marker)$($i + 1). $versionLabel$prereleaseLabel (发布于: $publishedDate)"
                 }
                 Write-Host "=========================================="
                 Write-Host "  0. 安装列表中的最新版本"
