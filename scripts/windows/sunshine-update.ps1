@@ -568,16 +568,17 @@ while ($mainMenuLoop) {
                     Write-Host "  $($i + 1). $versionLabel$prereleaseLabel (发布于: $publishedDate)"
                 }
                 Write-Host "=========================================="
+                Write-Host "  0. 安装列表中的最新版本"
                 Write-Host "  B. 返回上一层（重新选择版本类型）"
-                Write-Host "  0. 退出"
+                Write-Host "  Q. 退出"
                 Write-Host "=========================================="
                 
                 # 让用户选择版本
                 $selectedIndex = -1
-                $userInput = Read-Host "请输入要安装的版本编号 (1-$($filteredReleases.Count))，或输入 B/0"
+                $userInput = Read-Host "请输入要安装的版本编号 (1-$($filteredReleases.Count))，或输入 0/其他选项"
                 
                 # 处理特殊选项
-                if ($userInput -eq "0" -or $userInput -eq "q" -or $userInput -eq "Q") {
+                if ($userInput -eq "q" -or $userInput -eq "Q") {
                     Write-Host "已取消操作。"
                     Exit-Script 0
                 }
@@ -587,18 +588,25 @@ while ($mainMenuLoop) {
                     break  # 跳出版本选择循环，返回版本类型选择
                 }
                 
+                # 处理"安装列表中的最新版本"选项
+                if ($userInput -eq "0") {
+                    # 选择列表中的第一个版本（即最新版本）
+                    $selectedRelease = $filteredReleases[0]
+                    Write-Host "已选择列表中的最新版本: $($selectedRelease.tag_name)"
+                    $versionSelected = $true
+                }
                 # 处理数字输入
-                if ([int]::TryParse($userInput, [ref]$selectedIndex)) {
+                elseif ([int]::TryParse($userInput, [ref]$selectedIndex)) {
                     if ($selectedIndex -ge 1 -and $selectedIndex -le $filteredReleases.Count) {
                         $selectedRelease = $filteredReleases[$selectedIndex - 1]
                         $versionSelected = $true
                     }
                     else {
-                        Write-Host "无效的选择，请输入 1 到 $($filteredReleases.Count) 之间的数字，或输入 B/0。"
+                        Write-Host "无效的选择，请输入 1 到 $($filteredReleases.Count) 之间的数字，或输入 0（最新版本）/B（返回）/Q（退出）。"
                     }
                 }
                 else {
-                    Write-Host "无效的输入，请输入数字、B（返回）或 0（退出）。"
+                    Write-Host "无效的输入，请输入数字、0（最新版本）、B（返回）或 Q（退出）。"
                 }
             }
         }
