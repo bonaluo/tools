@@ -1,26 +1,25 @@
 // https://mihomo.party/docs/guide/override/javascript
 
-// 返回config中proxy名称符合规则rule的
-function findProxy(config, rule, defualt) {
-  let res = [];
-  config.proxies.forEach(proxy => {
-    if (proxy.name.match(rule)) res.push(proxy.name);
-  });
-  if (res.length === 0) res = defualt;
-  return res;
+// 通过正则找到符合的代理节点
+function findProxy(config, pattern, defualt) {
+  const res = config.proxies.filter(p => pattern.test(p.name)).map(p => p.name);
+  return res.length ? res : defualt;
 }
 
-function main(config) {
-  const obj = config;
+// 移除多倍率
+function removeMultiPrice(config) {
   // 移除策略组中的倍率节点
-  obj['proxy-groups'].forEach(group => {
-    group.proxies = group.proxies.filter(proxyName => !proxyName.includes('倍率'));
+  config['proxy-groups'].forEach(group => {
+    group.proxies = group.proxies.filter(pn => !pn.includes('倍率'));
   })
   // 移除倍率节点
-  obj.proxies = obj.proxies.filter(proxy => !proxy.name.includes('倍率'));
+  config.proxies = config.proxies.filter(proxy => !proxy.name.includes('倍率'));
+}
+
+function addGroupByName(config) {
   // 按照名称分组
   let result = {};
-  obj.proxies.forEach(item => {
+  config.proxies.forEach(item => {
     let match = item.name.match(/^(.*)-\d{2}$/);
     if (match) {
       // 移除方括号及其内容
@@ -34,73 +33,68 @@ function main(config) {
   // 添加名称分组
   for (let key in result) {
     if (result[key].length >= 1) {
-      obj['proxy-groups'].push({
-        name: key, type: 'url-test', proxies: result[key],
-        url: 'http://www.gstatic.com/generate_204', interval: 600
+      config['proxy-groups'].push({
+        name: key, type: 'url-test', proxies: result[key]
       });
     }
   }
+}
+
+function addCustomGroup(config) {
   // 添加自定义分组
   // 注意 | 的外层使用 () 而不是 []
   let appendProxyGroups = [
-    { name: '直连', rule: /DIRECT/, defualt: ['DIRECT'], type: 'select' },
-    { name: '全部', rule: /.*/, type: 'url-test' },
-    { name: '香港', rule: /(HK|香港)/, type: 'url-test' },
-    { name: '台湾', rule: /(TW|台湾)/, type: 'url-test' },
-    { name: '日本', rule: /(JP|日本)/, type: 'url-test' },
-    { name: '非日本', rule: /^(?!.*(JP|日本)).*$/, type: 'url-test' },
-    { name: '美国', rule: /(US|美国)/, type: 'url-test' }
-
+    { name: '直连', type: 'select', pattern: /DIRECT/i, defualt: ['DIRECT'] },
+    { name: '香港', type: 'url-test', pattern: /(HK|香港)/i, defualt: ['DIRECT'] },
+    { name: '台湾', type: 'url-test', pattern: /(TW|台湾)/i, defualt: ['DIRECT'] },
+    { name: '日本', type: 'url-test', pattern: /(JP|日本)/i, defualt: ['DIRECT'] },
+    { name: '非日本', type: 'url-test', pattern: /^(?!.*(JP|日本)).*$/i, defualt: ['DIRECT'] },
+    { name: '美国', type: 'url-test', pattern: /(US|美国)/i, defualt: ['DIRECT'] },
+    { name: 'GPT优化', type: 'url-test', pattern: /(gpt|优化)/i, defualt: findProxy(config, /.*/, ['DIRECT']) },
+    { name: '全部-速度优先', type: 'url-test', pattern: /.*/i, defualt: ['DIRECT'] },
+    { name: '全部-负载均衡', type: 'load-balance', pattern: /.*/i, defualt: ['DIRECT'] },
+    // 兜底规则可以选择是直连、速度优先还是负载均衡
+    { name: 'MATCH-智能路由', type: 'select', proxies: ['DIRECT', '全部-速度优先', '全部-负载均衡'] },
   ]
-  appendProxyGroups.forEach(({ name, rule, defualt, type }) => {
-    // 判断是否有重复的代理组，前面的按名称分组可能和后面的自定义的冲突
-    const exists = obj['proxy-groups'].some(item => {
+  appendProxyGroups.forEach(({ name, pattern, type, defualt, proxies }) => {
+    const exists = config['proxy-groups'].some(item => {
       return item.name === name;
     })
-    console.log(`${name}:${exists}`)
     if (exists) {
+      console.log(`${name}:${exists}`);
       return;
     }
-    obj['proxy-groups'].push({
-      name, type: type, proxies: findProxy(obj, rule, defualt),
-      url: 'http://www.gstatic.com/generate_204', interval: 600
-    });
+    if (proxies) {
+      config['proxy-groups'].push({
+        name, type: type, proxies: proxies
+      });
+    } else {
+      config['proxy-groups'].push({
+        name, type: type, proxies: findProxy(config, pattern, defualt)
+      });
+    }
   })
-
-  // 添加规则，对于某些脚本和规则覆写不能同时使用，优先使用脚本
-  // addRules(obj);
-  return obj;
 }
 
-const domainRules = [
-  "DOMAIN-SUFFIX,jable.tv,非日本",
-  "DOMAIN-SUFFIX,missav.ai,非日本",
-  "DOMAIN-SUFFIX,pornhub.com,非日本",
-  "DOMAIN-SUFFIX,hanime1.me,非日本",
-  "DOMAIN-SUFFIX,anime1.me,非日本",
-  "DOMAIN-SUFFIX,18commic.vip,非日本",
-  "DOMAIN-SUFFIX,copilot.microsoft.com,香港",
-  "DOMAIN-SUFFIX,epicgames.com,香港",
-  "DOMAIN-SUFFIX,tw,台湾",
-  "DOMAIN-SUFFIX,doubleclick.net,台湾",
-  "DOMAIN-SUFFIX,bahamut.akamaized.net,台湾",
-  "DOMAIN-SUFFIX,jp,日本",
-  "DOMAIN-SUFFIX,intel.cn,直连",
-  "DOMAIN-SUFFIX,intel.com,直连",
-  "DOMAIN-SUFFIX,bandbbs.cn,直连",
-  "DOMAIN-SUFFIX,ntdm8.com,直连",
-  "DOMAIN-SUFFIX,lanzoux.com,全部",
-  "DOMAIN-SUFFIX,ghcr.io,全部",
-  "DOMAIN-SUFFIX,home-assistant.io,全部"
-];
+// 删除所有默认代理组和规则
+function clearDefaultGroupsAndRules(config) {
+  config['proxy-groups'] = [];
+  config.rules = [];
+}
+
+// 兜底规则使用的代理组
+function matchDirect(config, groupName) {
+  config.rules.push(`MATCH,${groupName}`);
+}
+
+function main(config) {
+
+  clearDefaultGroupsAndRules(config);  // 清空默认代理组和规则
+  // removeMultiPrice(config);// 流量很多不需要移除多倍率节点
+  // addGroupByName(config);// 名称分组会添加很多分组，不如自定义分组来的清晰、可靠、稳定
+  addCustomGroup(config);
+  matchDirect(config, 'MATCH-智能路由');// 兜底规则使用智能路由，流量仍然可以通过智能路由进行优化
 
 
-// 添加规则，对于某些脚本和规则覆写不能同时使用，优先使用脚本
-function addRules(obj) {
-  // domainRules.forEach(rule => {
-  //   obj.rules.unshift(rule);
-  // })
-  
-  // 使用展开运算符将数组元素添加到规则列表中
-  obj.rules.unshift(...domainRules);
+  return config;
 }

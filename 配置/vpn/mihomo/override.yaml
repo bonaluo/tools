@@ -1,21 +1,43 @@
 # https://mihomo.party/docs/guide/override/yaml
 +rules:
-  - DOMAIN-SUFFIX,jable.tv,非日本
-  - DOMAIN-SUFFIX,missav.ai,非日本      
-  - DOMAIN-SUFFIX,pornhub.com,非日本
-  - DOMAIN-SUFFIX,hanime1.me,非日本
-  - DOMAIN-SUFFIX,anime1.me,非日本
-  - DOMAIN-SUFFIX,18commic.vip,非日本
-  - DOMAIN-SUFFIX,copilot.microsoft.com,香港
-  - DOMAIN-SUFFIX,epicgames.com,香港
-  - DOMAIN-SUFFIX,tw,台湾
-  - DOMAIN-SUFFIX,doubleclick.net,台湾
-  - DOMAIN-SUFFIX,bahamut.akamaized.net,台湾
-  - DOMAIN-SUFFIX,jp,日本
+  # 直连
   - DOMAIN-SUFFIX,intel.cn,直连
   - DOMAIN-SUFFIX,intel.com,直连
   - DOMAIN-SUFFIX,bandbbs.cn,直连
-  - DOMAIN-SUFFIX,ntdm8.com,直连
-  - DOMAIN-SUFFIX,lanzoux.com,全部
-  - DOMAIN-SUFFIX,ghcr.io,全部
-  - DOMAIN-SUFFIX,home-assistant.io,全部
+  - DOMAIN-SUFFIX,jetbrains.com,直连
+  - DOMAIN-SUFFIX,logi.com,直连
+  - DOMAIN-SUFFIX,local.lan,直连
+  # 中国网站直连（包含海外部署的中国服务）
+  - GEOSITE,cn,直连
+  - GEOIP,cn,直连
+ 
+  # 非日本
+  - DOMAIN-SUFFIX,jable.tv,非日本
+  - DOMAIN-SUFFIX,hanime1.me,非日本
+  - DOMAIN-SUFFIX,anime1.me,非日本
+  - DOMAIN-SUFFIX,18commic.vip,非日本
+  - DOMAIN-KEYWORD,missav,非日本
+  # 香港
+  - DOMAIN-SUFFIX,epicgames.com,香港
+  # - DOMAIN,hk01t.goodyun.buzz,香港
+  # 台湾
+  - DOMAIN-SUFFIX,tw,台湾
+  # - DOMAIN-SUFFIX,doubleclick.net,台湾
+  - DOMAIN-SUFFIX,bahamut.akamaized.net,台湾
+  # 日本
+  - DOMAIN-SUFFIX,jp,日本
+  # 美国
+  # - DOMAIN-SUFFIX,huggingface.co,美国
+  # - DOMAIN-SUFFIX,telegram.org,美国
+  - DOMAIN-KEYWORD,antigravity,美国
+  # gpt优化
+  - DOMAIN-SUFFIX,cursor.sh,GPT优化 
+  - DOMAIN-SUFFIX,cursorapi.com,GPT优化 
+  - DOMAIN-SUFFIX,cursor-cdn.com,GPT优化 
+  - DOMAIN-SUFFIX,cursor.com,GPT优化
+  - DOMAIN-SUFFIX,copilot.microsoft.com,GPT优化
+
+  # 拒绝
+  - GEOSITE,category-ads-all,REJECT
+
+  
