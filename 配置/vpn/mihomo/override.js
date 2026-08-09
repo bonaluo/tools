@@ -44,17 +44,18 @@ function addCustomGroup(config) {
   // 添加自定义分组
   // 注意 | 的外层使用 () 而不是 []
   let appendProxyGroups = [
-    { name: '直连', type: 'select', pattern: /DIRECT/i, defualt: ['DIRECT'] },
-    { name: '香港', type: 'url-test', pattern: /(HK|香港)/i, defualt: ['DIRECT'] },
-    { name: '台湾', type: 'url-test', pattern: /(TW|台湾)/i, defualt: ['DIRECT'] },
-    { name: '日本', type: 'url-test', pattern: /(JP|日本)/i, defualt: ['DIRECT'] },
-    { name: '非日本', type: 'url-test', pattern: /^(?!.*(JP|日本)).*$/i, defualt: ['DIRECT'] },
-    { name: '美国', type: 'url-test', pattern: /(US|美国)/i, defualt: ['DIRECT'] },
-    { name: 'GPT优化', type: 'url-test', pattern: /(gpt|优化)/i, defualt: findProxy(config, /.*/, ['DIRECT']) },
     { name: '全部-速度优先', type: 'url-test', pattern: /.*/i, defualt: ['DIRECT'] },
     { name: '全部-负载均衡', type: 'load-balance', pattern: /.*/i, defualt: ['DIRECT'] },
     // 兜底规则可以选择是直连、速度优先还是负载均衡
-    { name: 'MATCH-智能路由', type: 'select', proxies: ['全部-速度优先', '全部-负载均衡', 'DIRECT', '美国'] },
+    { name: 'MATCH-智能路由', type: 'select', proxies: ['全部-速度优先', '全部-负载均衡', 'DIRECT'] },    
+    { name: '直连', type: 'select', pattern: /DIRECT/i, defualt: ['DIRECT'] },
+    { name: '香港', type: 'url-test', pattern: /(🇭🇰|HK|香港)/i, defualt: ['MATCH-智能路由'] },
+    { name: '台湾', type: 'url-test', pattern: /(🇹🇼|TW|台湾)/i, defualt: ['MATCH-智能路由'] },
+    { name: '日本', type: 'url-test', pattern: /(🇯🇵|JP|日本)/i, defualt: ['MATCH-智能路由'] },
+    { name: '非日本', type: 'url-test', pattern: /^(?!.*(🇯🇵|JP|日本)).*$/i, defualt: ['MATCH-智能路由'] },
+    { name: '美国', type: 'url-test', pattern: /(🇺🇸|US|美国)/i, defualt: ['MATCH-智能路由'] },
+    { name: 'GPT优化', type: 'url-test', pattern: /(gpt|优化)/i, defualt: ['MATCH-智能路由'] },
+
   ]
   appendProxyGroups.forEach(({ name, pattern, type, defualt, proxies }) => {
     const exists = config['proxy-groups'].some(item => {
@@ -97,7 +98,7 @@ function main(config) {
 
   clearDefaultGroupsAndRules(config);  // 清空默认代理组和规则
   // removeMultiPrice(config);// 流量很多不需要移除多倍率节点
-  // addGroupByName(config);// 名称分组会添加很多分组，不如自定义分组来的清晰、可靠、稳定
+  addGroupByName(config);// 名称分组会添加很多分组，不如自定义分组来的清晰、可靠、稳定
   addCustomGroup(config);
   addDefaultRules(config);
   matchDirect(config, 'MATCH-智能路由');// 兜底规则使用智能路由，流量仍然可以通过智能路由进行优化
