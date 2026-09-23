@@ -4,23 +4,27 @@ setlocal enabledelayedexpansion
 :: 注意打开 【停用 adb 授权超时功能】，否则 adb 过一会儿会自动断开连接，导致拉取失败
 
 :: 设置日期和时间格式，中文格式日期
-set "starttime=%date%%time%"
-:: 格式化日期
-for /f "tokens=2 delims==" %%a in ('wmic os get localdatetime /value') do set "dt=%%a"
-set "year=!dt:~0,4!"
-set "month=!dt:~4,2!"
-set "day=!dt:~6,2!"
-set "hour=!dt:~8,2!"
-set "minute=!dt:~10,2!"
-set "second=!dt:~12,2!"
-set "startTimeFormatted=!year!-!month!-!day! !hour!:!minute!:!second!"
+:: 获取当前时间字符串 yyyy-MM-dd HH:mm:ss
+for /f "delims=" %%a in ('powershell -Command "(Get-Date).ToString('yyyy-MM-dd HH:mm:ss')"') do set "startTimeFormatted=%%a"
+
 echo 开始时间: !startTimeFormatted!
+:: 解析年月日用于目录名
+for /f "tokens=1-2 delims= " %%a in ("!startTimeFormatted!") do (
+    set "datePart=%%a"
+    set "timePart=%%b"
+)
+for /f "tokens=1-3 delims=-" %%a in ("!datePart!") do (
+    set "year=%%a"
+    set "month=%%b"
+    set "day=%%c"
+)
+
 echo.
 :: 时间戳
 for /f %%i in ('powershell -Command "(Get-Date -UFormat %%s)"') do set dttimestamp=%%i
 
 :: 创建目标目录
-set "targetDir=P:\video\owner\!year!!month!!day!"
+set "targetDir=O:\video\owner\!year!!month!!day!"
 echo 创建目标目录为：!targetDir!
 mkdir "!targetDir!"
 :: 检查并选择设备
@@ -86,15 +90,8 @@ echo 文件已成功拉取到目录：!targetDir!
 
 :: 打印拉取耗时
 echo.
-set "endtime=%date%%time%"
-for /f "tokens=2 delims==" %%a in ('wmic os get localdatetime /value') do set "et=%%a"
-set "eyear=!et:~0,4!"
-set "emonth=!et:~4,2!"
-set "eday=!et:~6,2!"
-set "ehour=!et:~8,2!"
-set "eminute=!et:~10,2!"
-set "esecond=!et:~12,2!"
-set "endTimeFormatted=!eyear!-!emonth!-!eday! !ehour!:!eminute!:!esecond!"
+:: 获取结束时间 yyyy-MM-dd HH:mm:ss
+for /f "delims=" %%a in ('powershell -Command "(Get-Date).ToString('yyyy-MM-dd HH:mm:ss')"') do set "endTimeFormatted=%%a"
 echo 结束时间: !endTimeFormatted!
 echo 时间范围: !startTimeFormatted! ~ !endTimeFormatted!
 echo.
